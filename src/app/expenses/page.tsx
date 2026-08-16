@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
-import { formatPHP } from "@/lib/utils";
+import { formatDatePH, formatPHP, todayInputDate } from "@/lib/utils";
 
 interface Tx {
   _id: string;
@@ -34,7 +34,7 @@ export default function ExpensesPage() {
     amount: "",
     category: "cogs",
     description: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: todayInputDate(),
   });
 
   async function load() {
@@ -134,7 +134,7 @@ export default function ExpensesPage() {
           <Panel title="Expense & loss ledger">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-teal-900/10 text-slate-500">
+                <thead className="border-b border-violet-900/10 text-slate-500">
                   <tr>
                     <th className="py-2 pr-3 font-medium">Date</th>
                     <th className="py-2 pr-3 font-medium">Type</th>
@@ -145,9 +145,9 @@ export default function ExpensesPage() {
                 </thead>
                 <tbody>
                   {items.map((item) => (
-                    <tr key={item._id} className="border-b border-teal-900/5">
+                    <tr key={item._id} className="border-b border-violet-900/5">
                       <td className="py-3 pr-3 whitespace-nowrap">
-                        {new Date(item.date).toLocaleDateString("en-PH")}
+                        {formatDatePH(item.date)}
                       </td>
                       <td className="py-3 pr-3 capitalize">{item.type}</td>
                       <td className="py-3 pr-3 uppercase text-xs">

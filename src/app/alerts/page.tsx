@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Panel } from "@/components/ui";
+import { formatDateTimePH } from "@/lib/utils";
 
 interface AlertItem {
   _id: string;
@@ -64,16 +65,16 @@ export default function AlertsPage() {
               className={`rounded-2xl border px-4 py-3 ${
                 alert.read
                   ? "border-slate-200 bg-white"
-                  : "border-teal-200 bg-teal-50/70"
+                  : "border-violet-200 bg-violet-50/70"
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-teal-950">{alert.title}</p>
+                  <p className="font-medium text-violet-950">{alert.title}</p>
                   <p className="mt-1 text-sm text-slate-600">{alert.message}</p>
                   <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-500">
                     {alert.type} · {alert.severity} ·{" "}
-                    {new Date(alert.createdAt).toLocaleString("en-PH")}
+                    {formatDateTimePH(alert.createdAt)}
                   </p>
                 </div>
                 {!alert.read ? (

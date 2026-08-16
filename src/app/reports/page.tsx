@@ -101,7 +101,7 @@ export default function ReportsPage() {
                     {formatPHP(Number(result.expenses || 0))}
                   </p>
                 </div>
-                <div className="rounded-xl bg-teal-50 p-3">
+                <div className="rounded-xl bg-violet-50 p-3">
                   <p className="text-xs text-slate-500">Net profit</p>
                   <p className="text-xl font-semibold">
                     {formatPHP(Number(result.netProfit || 0))}
@@ -115,7 +115,7 @@ export default function ReportsPage() {
                 <strong>{formatPHP(Number(result.totalValue || 0))}</strong>
               </p>
             ) : null}
-            <pre className="max-h-[420px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-teal-100">
+            <pre className="max-h-[420px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-violet-100">
               {JSON.stringify(result, null, 2)}
             </pre>
           </Panel>

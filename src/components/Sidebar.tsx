@@ -50,7 +50,7 @@ export function Sidebar({
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-teal-900/20 bg-[linear-gradient(165deg,#0b3d3a_0%,#0f5c56_45%,#134e4a_100%)] text-teal-50 transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-violet-900/20 bg-[linear-gradient(165deg,#2e1065_0%,#5b21b6_48%,#7c3aed_100%)] text-violet-50 transition-transform lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -59,12 +59,12 @@ export function Sidebar({
             <p className="font-[family-name:var(--font-display)] text-2xl tracking-tight text-white">
               Chay
             </p>
-            <p className="text-xs uppercase tracking-[0.22em] text-teal-200/80">
+            <p className="text-xs uppercase tracking-[0.22em] text-violet-200/80">
               Ops Platform
             </p>
           </Link>
           <button
-            className="rounded-lg p-2 text-teal-100 hover:bg-white/10 lg:hidden"
+            className="rounded-lg p-2 text-violet-100 hover:bg-white/10 lg:hidden"
             onClick={onClose}
             aria-label="Close menu"
           >
@@ -74,10 +74,7 @@ export function Sidebar({
 
         <nav className="flex-1 space-y-1 px-3">
           {links
-            .filter(
-              (link) =>
-                !link.permission || can(role, link.permission)
-            )
+            .filter((link) => !link.permission || can(role, link.permission))
             .map((link) => {
               const active =
                 link.href === "/"
@@ -92,7 +89,7 @@ export function Sidebar({
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
                     active
                       ? "bg-white/15 text-white shadow-sm"
-                      : "text-teal-100/80 hover:bg-white/10 hover:text-white"
+                      : "text-violet-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <Icon size={18} />
@@ -107,18 +104,18 @@ export function Sidebar({
             <p className="text-sm font-medium text-white">
               {data?.user?.name}
             </p>
-            <p className="text-xs capitalize text-teal-100/70">
+            <p className="text-xs capitalize text-violet-100/70">
               {role} · {data?.user?.email}
             </p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-teal-100/80 transition hover:bg-white/10 hover:text-white"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-violet-100/80 transition hover:bg-white/10 hover:text-white"
           >
             <LogOut size={16} />
             Sign out
           </button>
-          <p className="mt-3 flex items-center gap-1.5 px-1 text-[10px] uppercase tracking-wider text-teal-200/50">
+          <p className="mt-3 flex items-center gap-1.5 px-1 text-[10px] uppercase tracking-wider text-violet-200/50">
             <BarChart3 size={12} />
             SE-BIOP Phase 1
           </p>

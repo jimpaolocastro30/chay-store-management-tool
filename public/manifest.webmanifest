@@ -4,8 +4,8 @@
   "description": "Small Enterprise BI & Operations Platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4faf8",
-  "theme_color": "#0f766e",
+  "background_color": "#f5f3ff",
+  "theme_color": "#7c3aed",
   "icons": [
     {
       "src": "/icon-192.png",

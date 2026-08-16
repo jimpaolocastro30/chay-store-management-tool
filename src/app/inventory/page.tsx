@@ -107,7 +107,7 @@ export default function InventoryPage() {
         <Button type="button" variant="secondary" onClick={() => load(q)}>
           Search
         </Button>
-        <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-teal-900/15 bg-white px-4 py-2.5 text-sm font-medium text-teal-900">
+        <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-violet-900/15 bg-white px-4 py-2.5 text-sm font-medium text-violet-900">
           {importing ? "Importing…" : "Import CSV/XLSX"}
           <input
             type="file"
@@ -199,7 +199,7 @@ export default function InventoryPage() {
           <Panel title="Stock list">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-teal-900/10 text-slate-500">
+                <thead className="border-b border-violet-900/10 text-slate-500">
                   <tr>
                     <th className="py-2 pr-3 font-medium">Item</th>
                     <th className="py-2 pr-3 font-medium">Qty</th>
@@ -211,9 +211,9 @@ export default function InventoryPage() {
                   {items.map((item) => {
                     const low = item.quantity <= item.reorderLevel;
                     return (
-                      <tr key={item._id} className="border-b border-teal-900/5">
+                      <tr key={item._id} className="border-b border-violet-900/5">
                         <td className="py-3 pr-3">
-                          <p className="font-medium text-teal-950">{item.name}</p>
+                          <p className="font-medium text-violet-950">{item.name}</p>
                           <p className="text-xs text-slate-500">
                             {item.sku} · {item.category}
                           </p>
@@ -241,7 +241,7 @@ export default function InventoryPage() {
                         <td className="py-3">
                           <div className="flex gap-2">
                             <button
-                              className="rounded-lg border border-teal-900/15 px-2 py-1"
+                              className="rounded-lg border border-violet-900/15 px-2 py-1"
                               onClick={() =>
                                 adjustQty(item._id, Math.max(0, item.quantity - 1))
                               }
@@ -249,7 +249,7 @@ export default function InventoryPage() {
                               −
                             </button>
                             <button
-                              className="rounded-lg border border-teal-900/15 px-2 py-1"
+                              className="rounded-lg border border-violet-900/15 px-2 py-1"
                               onClick={() =>
                                 adjustQty(item._id, item.quantity + 1)
                               }

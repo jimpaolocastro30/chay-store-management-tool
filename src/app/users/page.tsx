@@ -108,7 +108,7 @@ export default function UsersPage() {
           <Panel title="Team directory">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-teal-900/10 text-slate-500">
+                <thead className="border-b border-violet-900/10 text-slate-500">
                   <tr>
                     <th className="py-2 pr-3 font-medium">Name</th>
                     <th className="py-2 pr-3 font-medium">Email</th>
@@ -118,7 +118,7 @@ export default function UsersPage() {
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user._id} className="border-b border-teal-900/5">
+                    <tr key={user._id} className="border-b border-violet-900/5">
                       <td className="py-3 pr-3 font-medium">{user.name}</td>
                       <td className="py-3 pr-3">{user.email}</td>
                       <td className="py-3 pr-3 capitalize">{user.role}</td>

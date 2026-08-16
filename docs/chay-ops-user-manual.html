@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chay Ops User Manual</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 20mm; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      color: #4c1d95;
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+    }
+    h1, h2, h3 { color: #2e1065; page-break-after: avoid; }
+    h2 {
+      font-size: 16pt;
+      margin: 22px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #7c3aed;
+    }
+    h3 { font-size: 12.5pt; margin: 16px 0 6px; }
+    p, li { margin: 0 0 8px; }
+    ul, ol { margin: 0 0 10px; padding-left: 20px; }
+    a { color: #7c3aed; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 10pt;
+    }
+    th, td {
+      border: 1px solid #ddd6fe;
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #4c1d95; color: #fff; font-weight: 600; }
+    tr:nth-child(even) td { background: #f5f3ff; }
+    .muted { color: #6b7280; }
+    .cover {
+      page-break-after: always;
+      min-height: 240mm;
+      padding: 28mm 8mm 16mm;
+      background: linear-gradient(165deg, #2e1065 0%, #5b21b6 48%, #7c3aed 100%);
+      color: #f5f3ff;
+    }
+    .cover h1 {
+      color: #fff;
+      font-size: 42pt;
+      margin: 0 0 6px;
+      letter-spacing: -0.5px;
+    }
+    .cover .subtitle { font-size: 14pt; color: #ddd6fe; margin-bottom: 28px; }
+    .cover .meta {
+      margin-top: 48px;
+      font-size: 11pt;
+      color: #ede9fe;
+    }
+    .badge {
+      display: inline-block;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      font-size: 9pt;
+      color: #ddd6fe;
+      margin-bottom: 18px;
+    }
+    .callout {
+      background: #f5f3ff;
+      border-left: 4px solid #7c3aed;
+      padding: 10px 12px;
+      margin: 10px 0 14px;
+    }
+    .warn {
+      background: #fff7ed;
+      border-left: 4px solid #d97706;
+      padding: 10px 12px;
+      margin: 10px 0 14px;
+    }
+    .toc a { text-decoration: none; color: #2e1065; }
+    .toc td { border: none; padding: 5px 0; background: none !important; }
+    .toc .num { width: 28px; font-weight: 700; color: #7c3aed; }
+    .section { page-break-inside: avoid; }
+    .footer-note {
+      margin-top: 24px;
+      font-size: 9pt;
+      color: #6b7280;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9.5pt;
+      background: #f1f5f4;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="badge">Philippines · Small Enterprise</div>
+    <h1>Chay Ops</h1>
+    <p class="subtitle">Business Intelligence &amp; Operations Platform<br />User Manual</p>
+    <p>A practical guide for owners, managers, and staff to record sales, expenses, inventory, capital, and reports in one workspace.</p>
+    <div class="meta">
+      <p><strong>Product:</strong> Chay Ops (SE-BIOP) Phase 1</p>
+      <p><strong>Version:</strong> 0.1.0</p>
+      <p><strong>Date:</strong> 16 August 2026</p>
+      <p><strong>Audience:</strong> Store owners, managers, and floor staff</p>
+    </div>
+  </section>
+
+  <h2>Contents</h2>
+  <table class="toc">
+    <tr><td class="num">1</td><td><a href="#intro">What Chay Ops does</a></td></tr>
+    <tr><td class="num">2</td><td><a href="#start">Getting started</a></td></tr>
+    <tr><td class="num">3</td><td><a href="#roles">Roles and permissions</a></td></tr>
+    <tr><td class="num">4</td><td><a href="#nav">Finding your way around</a></td></tr>
+    <tr><td class="num">5</td><td><a href="#dashboard">Dashboard</a></td></tr>
+    <tr><td class="num">6</td><td><a href="#revenue">Revenue</a></td></tr>
+    <tr><td class="num">7</td><td><a href="#expenses">Expenses and losses</a></td></tr>
+    <tr><td class="num">8</td><td><a href="#inventory">Inventory</a></td></tr>
+    <tr><td class="num">9</td><td><a href="#capital">Capital</a></td></tr>
+    <tr><td class="num">10</td><td><a href="#reports">Reports</a></td></tr>
+    <tr><td class="num">11</td><td><a href="#alerts">Alerts</a></td></tr>
+    <tr><td class="num">12</td><td><a href="#users">Users</a></td></tr>
+    <tr><td class="num">13</td><td><a href="#sample">Sample / demo data</a></td></tr>
+    <tr><td class="num">14</td><td><a href="#tips">Daily workflow and tips</a></td></tr>
+    <tr><td class="num">15</td><td><a href="#help">Troubleshooting</a></td></tr>
+  </table>
+
+  <h2 id="intro">1. What Chay Ops does</h2>
+  <p>Chay Ops is a web app for Philippine small businesses. It keeps day-to-day store numbers in one place so you can see cash, stock, and profit without a spreadsheet maze.</p>
+  <ul>
+    <li>Record daily sales (cash, GCash, Maya, card, bank transfer)</li>
+    <li>Log operating expenses and inventory losses</li>
+    <li>Track SKUs, quantities, costs, and low-stock alerts</li>
+    <li>Record capital in, extra investment, and owner withdrawals</li>
+    <li>Preview and export P&amp;L, inventory value, KPI, and capital reports</li>
+    <li>Control access with Owner, Manager, and Staff roles</li>
+  </ul>
+  <p>Open the app in a browser at <code>http://localhost:3000</code> (local) or your deployed URL. The layout is mobile-friendly and can be installed as a PWA from the browser.</p>
+
+  <h2 id="start">2. Getting started</h2>
+  <h3>Sign in</h3>
+  <ol>
+    <li>Go to the login page (<code>/login</code>).</li>
+    <li>Enter your email and password.</li>
+    <li>Click <strong>Enter dashboard</strong>.</li>
+  </ol>
+  <p>On a fresh database with no users yet, click <strong>Load demo data</strong> first. That creates sample accounts, inventory, sales, expenses, and capital so you can explore immediately.</p>
+
+  <h3>Demo accounts</h3>
+  <table>
+    <thead>
+      <tr><th>Role</th><th>Name</th><th>Email</th><th>Password</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Owner</td><td>Maria Santos</td><td>owner@chay.ph</td><td>password123</td></tr>
+      <tr><td>Manager</td><td>Juan Dela Cruz</td><td>manager@chay.ph</td><td>password123</td></tr>
+      <tr><td>Staff</td><td>Ana Reyes</td><td>staff@chay.ph</td><td>password123</td></tr>
+    </tbody>
+  </table>
+  <div class="warn">Change these passwords before using Chay Ops with real store data. Demo load replaces existing users, transactions, inventory, capital, and alerts.</div>
+
+  <h3>Sign out</h3>
+  <p>Use <strong>Sign out</strong> at the bottom of the left sidebar. You return to the login screen.</p>
+
+  <h2 id="roles">3. Roles and permissions</h2>
+  <p>What you can see and change depends on your role.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>Owner</th>
+        <th>Manager</th>
+        <th>Staff</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Dashboard</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Revenue, expenses, inventory</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Alerts</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Reports (preview / CSV export)</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Capital</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td>Manage users</td><td>Yes</td><td>No</td><td>No</td></tr>
+    </tbody>
+  </table>
+  <p>Staff who open Capital or Users are sent back to the Dashboard. Managers do not see Users or Capital in the menu.</p>
+
+  <h2 id="nav">4. Finding your way around</h2>
+  <p>After login you land on the Dashboard. The left sidebar lists modules. On a phone, tap the menu icon in the header to open it.</p>
+  <table>
+    <thead>
+      <tr><th>Menu</th><th>Path</th><th>Use it for</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Dashboard</td><td>/</td><td>KPIs, trends, low stock, recent alerts</td></tr>
+      <tr><td>Revenue</td><td>/revenue</td><td>Daily sales entries</td></tr>
+      <tr><td>Expenses</td><td>/expenses</td><td>Costs and losses</td></tr>
+      <tr><td>Inventory</td><td>/inventory</td><td>SKUs, stock, import</td></tr>
+      <tr><td>Capital</td><td>/capital</td><td>Investments and withdrawals (owner)</td></tr>
+      <tr><td>Reports</td><td>/reports</td><td>P&amp;L and exports (owner / manager)</td></tr>
+      <tr><td>Alerts</td><td>/alerts</td><td>Notifications</td></tr>
+      <tr><td>Users</td><td>/users</td><td>Invite staff (owner)</td></tr>
+    </tbody>
+  </table>
+  <p>The bell in the header also opens Alerts. Amounts throughout the app are shown in Philippine pesos (PHP).</p>
+
+  <h2 id="dashboard">5. Dashboard</h2>
+  <p>The Dashboard is the daily health check. Cards include:</p>
+  <ul>
+    <li><strong>Revenue MTD / YTD</strong> — sales this month and this year</li>
+    <li><strong>Net Profit MTD</strong> — revenue minus expenses and losses, with net margin</li>
+    <li><strong>Gross Margin</strong> and expense ratio</li>
+    <li><strong>Cash Position</strong> and working capital</li>
+    <li><strong>Inventory Value</strong> and active SKU count</li>
+    <li><strong>Low Stock Alerts</strong> — items at or below reorder level</li>
+    <li><strong>Inventory Turnover</strong> — COGS ÷ inventory value (month-to-date)</li>
+    <li><strong>ROI on Capital</strong> — return versus capital deployed</li>
+  </ul>
+  <p>Below the cards you will see a 6-month revenue vs expenses chart, this month’s expense mix, a low-stock list, and recent alerts. Use <strong>Manage</strong> to jump to Inventory or <strong>View all</strong> for Alerts.</p>
+  <div class="callout">If the Dashboard shows an error and MongoDB is empty, open Login and click <strong>Load demo data</strong>.</div>
+
+  <h2 id="revenue">6. Revenue</h2>
+  <p>Use Revenue to record collections as they happen (or at end of day).</p>
+  <ol>
+    <li>Open <strong>Revenue</strong>.</li>
+    <li>Enter <strong>Amount (PHP)</strong>.</li>
+    <li>Write a short <strong>Description</strong> (for example, “Walk-in tea sales”).</li>
+    <li>Confirm the <strong>Date</strong>.</li>
+    <li>Choose a <strong>Payment method</strong>: Cash, GCash, Maya, Card, or Bank transfer.</li>
+    <li>Add an optional <strong>Reference</strong> (OR number, GCash ref, etc.).</li>
+    <li>Click <strong>Save revenue</strong>.</li>
+  </ol>
+  <p>Saved entries appear in <strong>Recent revenue</strong> with a running total of listed sales. Enter one row per batch or till close — whichever matches how your store counts the day.</p>
+
+  <h2 id="expenses">7. Expenses and losses</h2>
+  <p>Open <strong>Expenses</strong> to log operating costs and inventory damage.</p>
+  <ol>
+    <li>Set <strong>Type</strong> to Expense or Loss / damage.</li>
+    <li>Enter amount, category, description, and date.</li>
+    <li>Click <strong>Save entry</strong>.</li>
+  </ol>
+  <p>Categories: COGS, rent, utilities, payroll, marketing, supplies, transport, damage, other.</p>
+  <div class="callout">Use <strong>Expense</strong> for rent, salaries, restocking, and utilities. Use <strong>Loss / damage</strong> when stock is broken, expired, or otherwise written off. Both reduce profit; losses are meant for inventory write-offs rather than ordinary bills.</div>
+
+  <h2 id="inventory">8. Inventory</h2>
+  <h3>Add an item</h3>
+  <ol>
+    <li>Open <strong>Inventory</strong>.</li>
+    <li>Fill SKU, name, category, quantity, reorder level, unit cost, sell price, and location (default: Main Store).</li>
+    <li>Click <strong>Add inventory item</strong>.</li>
+  </ol>
+  <p>SKU should be unique (for example TEA-001). Selling price may be 0 for supplies you do not sell.</p>
+  <h3>Search and adjust stock</h3>
+  <p>Search by SKU, name, or category, then click <strong>Search</strong>. On each row, <strong>+</strong> and <strong>−</strong> change quantity by one. Quantity at or below reorder level is highlighted in amber and counted on the Dashboard as a low-stock alert.</p>
+  <h3>Import CSV / Excel</h3>
+  <p>Click <strong>Import CSV/XLSX</strong> and choose a file. Rows are matched on SKU (upsert). Suggested columns:</p>
+  <table>
+    <thead>
+      <tr><th>Column</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>sku</td><td>TEA-001</td></tr>
+      <tr><td>name</td><td>Jasmine Green Tea 250g</td></tr>
+      <tr><td>category</td><td>Tea</td></tr>
+      <tr><td>quantity</td><td>42</td></tr>
+      <tr><td>reorderLevel</td><td>15</td></tr>
+      <tr><td>unitCost</td><td>180</td></tr>
+      <tr><td>sellingPrice</td><td>280</td></tr>
+      <tr><td>location</td><td>Main Store</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="capital">9. Capital</h2>
+  <p>Owners use Capital to record money put into the business and money taken out.</p>
+  <ul>
+    <li><strong>Initial capital</strong> — starting funds</li>
+    <li><strong>Additional investment</strong> — later cash-in</li>
+    <li><strong>Withdrawal</strong> — owner draw</li>
+  </ul>
+  <p>The page shows Invested, Withdrawn, and Net capital. Save an amount, description, and date to append the ledger. Net capital feeds Dashboard ROI and cash-related KPIs.</p>
+
+  <h2 id="reports">10. Reports</h2>
+  <p>Owners and managers can generate:</p>
+  <ul>
+    <li>Profit &amp; Loss</li>
+    <li>Inventory valuation</li>
+    <li>KPI summary</li>
+    <li>Capital movements</li>
+  </ul>
+  <ol>
+    <li>Choose report type.</li>
+    <li>Optionally set From and To dates.</li>
+    <li>Click <strong>Preview</strong> to view on screen, or <strong>Excel/CSV</strong> to download a file that opens in Excel.</li>
+  </ol>
+  <p>Use date ranges for monthly close or investor packs. Leave dates blank to use the default period for that report.</p>
+
+  <h2 id="alerts">11. Alerts</h2>
+  <p>Alerts cover low stock, cash warnings, KPI notices, and info messages. Unread items are highlighted. You can mark one alert as read or click <strong>Mark all read</strong>.</p>
+  <p>After demo data is loaded you should see a welcome message plus any low-stock items that already sit under their reorder level (for example Earl Grey, bottled cold brew, and paper cups in the sample catalog).</p>
+
+  <h2 id="users">12. Users</h2>
+  <p>Only the Owner can open Users. To invite someone:</p>
+  <ol>
+    <li>Enter full name, email, a temporary password, and role (owner / manager / staff).</li>
+    <li>Click the save / invite action.</li>
+  </ol>
+  <p>Give the person their email and temporary password, then ask them to sign in at the login page. Share only the access they need: Staff for encoding, Manager for operations and reports, Owner for capital and user admin.</p>
+
+  <h2 id="sample">13. Sample / demo data</h2>
+  <p>Sample data is already loaded in the connected database (and can be reloaded from Login → <strong>Load demo data</strong> or <code>npm run seed</code> while the app is running).</p>
+  <p>The demo store is a tea / café operation with about six months of activity:</p>
+  <table>
+    <thead>
+      <tr><th>Area</th><th>What was loaded</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>People</td>
+        <td>Maria Santos (owner), Juan Dela Cruz (manager), Ana Reyes (staff)</td>
+      </tr>
+      <tr>
+        <td>Capital</td>
+        <td>₱500,000 initial · ₱100,000 extra investment · ₱25,000 owner draw</td>
+      </tr>
+      <tr>
+        <td>Inventory</td>
+        <td>TEA-001 Jasmine Green Tea, TEA-002 Earl Grey (low stock), SNK-010 Pandesa Cookies, BEV-020 Cold Brew (low stock), MER-030 Ceramic Mug, SUP-040 Paper Cups (low stock)</td>
+      </tr>
+      <tr>
+        <td>Sales</td>
+        <td>Walk-in tea, café beverages, gift sets, catering, weekend promos — cash and GCash</td>
+      </tr>
+      <tr>
+        <td>Costs</td>
+        <td>Monthly restock (COGS), rent ₱25,000, utilities, payroll ₱48,000, plus a ₱2,200 damage loss</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="warn">Reloading demo data wipes current operational records. Do not click Load demo data on a live store unless you intend to reset.</div>
+
+  <h2 id="tips">14. Daily workflow and tips</h2>
+  <ol>
+    <li><strong>Morning:</strong> Sign in as Staff or Manager. Check Dashboard low stock and Alerts.</li>
+    <li><strong>During the day:</strong> Encode revenue as tills close. Log purchases and bills on Expenses as receipts arrive.</li>
+    <li><strong>Stock:</strong> Use + / − for small adjustments; import a file after a full count.</li>
+    <li><strong>Week / month end:</strong> Manager or Owner opens Reports → P&amp;L and KPI, then downloads CSV for the accountant or investor.</li>
+    <li><strong>Owner only:</strong> Record extra capital or withdrawals on the same day they happen so cash position stays honest.</li>
+  </ol>
+  <div class="callout">Encode in PHP. Use consistent descriptions (“Store rent”, “Staff salaries”) so expense charts stay readable. Keep SKUs stable so imports update the same items instead of creating duplicates.</div>
+
+  <h2 id="help">15. Troubleshooting</h2>
+  <table>
+    <thead>
+      <tr><th>Problem</th><th>What to try</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Invalid email or password</td>
+        <td>Confirm the account exists. On a new setup, click Load demo data, then use owner@chay.ph / password123.</td>
+      </tr>
+      <tr>
+        <td>Dashboard error / empty data</td>
+        <td>MongoDB may be empty or unreachable. Check that the app is running and MONGODB_URI in .env.local is correct, then seed.</td>
+      </tr>
+      <tr>
+        <td>Cannot open Capital or Users</td>
+        <td>Sign in as Owner. Staff and managers are blocked from those pages.</td>
+      </tr>
+      <tr>
+        <td>Cannot export reports</td>
+        <td>Staff cannot export. Use a Manager or Owner account.</td>
+      </tr>
+      <tr>
+        <td>Import did nothing</td>
+        <td>For inventory, every row needs sku and name. For transactions, type must be revenue, expense, or loss, and amount must be greater than 0.</td>
+      </tr>
+      <tr>
+        <td>Need to start the app</td>
+        <td>In the project folder run <code>npm install</code> then <code>npm run dev</code>. Open http://localhost:3000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="footer-note">Chay Ops (SE-BIOP) Phase 1 · User Manual · 16 August 2026 · For internal store use. This document describes the web application as shipped in version 0.1.0.</p>
+</body>
+</html>

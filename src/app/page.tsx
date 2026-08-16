@@ -124,7 +124,7 @@ export default function DashboardPage() {
         <Panel
           title="Low Stock"
           action={
-            <Link href="/inventory" className="text-sm text-teal-800 hover:underline">
+            <Link href="/inventory" className="text-sm text-violet-800 hover:underline">
               Manage
             </Link>
           }
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between rounded-xl border border-amber-200/70 bg-amber-50/60 px-3 py-2"
               >
                 <div>
-                  <p className="font-medium text-teal-950">{item.name}</p>
+                  <p className="font-medium text-violet-950">{item.name}</p>
                   <p className="text-xs text-slate-500">{item.sku}</p>
                 </div>
                 <p className="text-sm font-semibold text-amber-800">
@@ -153,7 +153,7 @@ export default function DashboardPage() {
         <Panel
           title="Recent Alerts"
           action={
-            <Link href="/alerts" className="text-sm text-teal-800 hover:underline">
+            <Link href="/alerts" className="text-sm text-violet-800 hover:underline">
               View all
             </Link>
           }
@@ -162,10 +162,10 @@ export default function DashboardPage() {
             {(data?.alerts || []).slice(0, 5).map((alert) => (
               <div
                 key={alert._id}
-                className="rounded-xl border border-teal-900/10 bg-teal-50/40 px-3 py-2"
+                className="rounded-xl border border-violet-900/10 bg-violet-50/40 px-3 py-2"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium text-teal-950">{alert.title}</p>
+                  <p className="font-medium text-violet-950">{alert.title}</p>
                   <span className="text-[10px] uppercase tracking-wide text-slate-500">
                     {alert.severity}
                   </span>

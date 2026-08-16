@@ -16,7 +16,7 @@ import {
 import { ChartPoint, ExpenseBreakdown } from "@/types";
 import { formatPHP } from "@/lib/utils";
 
-const PIE_COLORS = ["#0f766e", "#0ea5a4", "#f59e0b", "#e11d48", "#64748b", "#14b8a6"];
+const PIE_COLORS = ["#7c3aed", "#8b5cf6", "#c026d3", "#f59e0b", "#e11d48", "#6366f1"];
 
 export function TrendChart({ data }: { data: ChartPoint[] }) {
   return (
@@ -25,8 +25,8 @@ export function TrendChart({ data }: { data: ChartPoint[] }) {
         <AreaChart data={data}>
           <defs>
             <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0f766e" stopOpacity={0.35} />
-              <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
+              <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="exp" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#e11d48" stopOpacity={0.25} />
@@ -40,14 +40,14 @@ export function TrendChart({ data }: { data: ChartPoint[] }) {
             formatter={(value: number) => formatPHP(value)}
             contentStyle={{
               borderRadius: 12,
-              border: "1px solid #99f6e4",
+              border: "1px solid #ddd6fe",
             }}
           />
           <Legend />
           <Area
             type="monotone"
             dataKey="revenue"
-            stroke="#0f766e"
+            stroke="#7c3aed"
             fill="url(#rev)"
             strokeWidth={2}
           />
