@@ -116,7 +116,8 @@ export default function RevenuePage() {
     if (!base.includes("Mixed")) base.push("Mixed");
     const extra = items
       .map((item) => item.category)
-      .filter((value): value is string => Boolean(value) && !base.includes(value));
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .filter((value) => !base.includes(value));
     return [...base, ...Array.from(new Set(extra))];
   }, [items, managedCategories]);
 
