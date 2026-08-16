@@ -2,10 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import {
+  Boxes,
+  CircleDollarSign,
+  FileSpreadsheet,
+  Landmark,
+  Receipt,
+  ShoppingCart,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ExpensePie, TrendChart } from "@/components/Charts";
 import { Panel, StatCard } from "@/components/ui";
-import { formatPHP, formatPercent } from "@/lib/utils";
+import { can, formatPHP, formatPercent } from "@/lib/utils";
+import { UserRole } from "@/types";
 import {
   ChartPoint,
   DashboardKpis,
@@ -32,7 +44,65 @@ interface DashboardPayload {
   }>;
 }
 
+const shortcuts = [
+  {
+    href: "/pos",
+    label: "Ring a sale",
+    hint: "POS checkout",
+    icon: ShoppingCart,
+    permission: "usePos" as const,
+  },
+  {
+    href: "/revenue",
+    label: "Record revenue",
+    hint: "Daily collections",
+    icon: TrendingUp,
+  },
+  {
+    href: "/expenses",
+    label: "Log expense",
+    hint: "Costs and losses",
+    icon: Receipt,
+  },
+  {
+    href: "/inventory",
+    label: "Update stock",
+    hint: "SKU and quantity",
+    icon: Boxes,
+  },
+  {
+    href: "/prices",
+    label: "Set prices",
+    hint: "Cost and sell price",
+    icon: CircleDollarSign,
+    permission: "editInventory" as const,
+  },
+  {
+    href: "/capital",
+    label: "Capital entry",
+    hint: "Invest or withdraw",
+    icon: Landmark,
+    permission: "manageCapital" as const,
+  },
+  {
+    href: "/reports",
+    label: "Build report",
+    hint: "P&L and KPIs",
+    icon: FileSpreadsheet,
+    permission: "exportReports" as const,
+  },
+  {
+    href: "/users",
+    label: "Manage users",
+    hint: "Roles and access",
+    icon: Users,
+    permission: "manageUsers" as const,
+  },
+];
+
 export default function DashboardPage() {
+  const { data: session } = useSession();
+  const role = session?.user?.role as UserRole | undefined;
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [error, setError] = useState("");
 
@@ -47,6 +117,9 @@ export default function DashboardPage() {
   }, []);
 
   const k = data?.kpis;
+  const visibleShortcuts = shortcuts.filter(
+    (item) => !item.permission || can(role, item.permission)
+  );
 
   return (
     <AppShell
@@ -60,47 +133,78 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Panel title="Quick actions">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {visibleShortcuts.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-3 rounded-2xl border border-violet-900/10 bg-white px-4 py-3 transition hover:border-violet-700/40 hover:bg-violet-50/70"
+              >
+                <span className="rounded-xl bg-violet-100 p-2 text-violet-800">
+                  <Icon size={18} />
+                </span>
+                <span>
+                  <p className="font-medium text-violet-950">{item.label}</p>
+                  <p className="text-xs text-slate-500">{item.hint}</p>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </Panel>
+
+      <div className="stagger mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          href="/revenue"
           label="Revenue MTD"
           value={formatPHP(k?.revenueMtd || 0)}
-          hint={`YTD ${formatPHP(k?.revenueYtd || 0)}`}
+          hint={`YTD ${formatPHP(k?.revenueYtd || 0)} · Record sales`}
           tone="good"
         />
         <StatCard
+          href="/reports"
           label="Net Profit MTD"
           value={formatPHP(k?.netProfitMtd || 0)}
-          hint={`Net margin ${formatPercent(k?.netMargin || 0)}`}
+          hint={`Net margin ${formatPercent(k?.netMargin || 0)} · View P&L`}
           tone={(k?.netProfitMtd || 0) >= 0 ? "good" : "bad"}
         />
         <StatCard
+          href="/expenses"
           label="Gross Margin"
           value={formatPercent(k?.grossMargin || 0)}
-          hint={`Expense ratio ${formatPercent(k?.expenseRatio || 0)}`}
+          hint={`Expense ratio ${formatPercent(k?.expenseRatio || 0)} · Log costs`}
         />
         <StatCard
+          href={can(role, "manageCapital") ? "/capital" : "/revenue"}
           label="Cash Position"
           value={formatPHP(k?.cashPosition || 0)}
           hint={`Working capital ${formatPHP(k?.workingCapital || 0)}`}
           tone={(k?.cashPosition || 0) >= 0 ? "default" : "bad"}
         />
         <StatCard
+          href="/inventory"
           label="Inventory Value"
           value={formatPHP(k?.inventoryValue || 0)}
-          hint={`${k?.inventoryCount || 0} active SKUs`}
+          hint={`${k?.inventoryCount || 0} active SKUs · Manage stock`}
         />
         <StatCard
+          href="/inventory"
           label="Low Stock Alerts"
           value={String(k?.lowStockCount || 0)}
           hint="Reorder threshold breached"
           tone={(k?.lowStockCount || 0) > 0 ? "warn" : "good"}
         />
         <StatCard
+          href={can(role, "editInventory") ? "/prices" : "/inventory"}
           label="Inventory Turnover"
           value={(k?.inventoryTurnover || 0).toFixed(2)}
           hint="COGS / inventory value (MTD)"
         />
         <StatCard
+          href={can(role, "manageCapital") ? "/capital" : "/reports"}
           label="ROI on Capital"
           value={formatPercent(k?.roiOnCapital || 0)}
           hint={`Capital deployed ${formatPHP(k?.totalCapital || 0)}`}
@@ -109,12 +213,31 @@ export default function DashboardPage() {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-5">
         <div className="xl:col-span-3">
-          <Panel title="Revenue vs Expenses (6 months)">
+          <Panel
+            title="Revenue vs Expenses (6 months)"
+            action={
+              <div className="flex gap-3 text-sm">
+                <Link href="/revenue" className="text-violet-800 hover:underline">
+                  Revenue
+                </Link>
+                <Link href="/expenses" className="text-violet-800 hover:underline">
+                  Expenses
+                </Link>
+              </div>
+            }
+          >
             <TrendChart data={data?.trend || []} />
           </Panel>
         </div>
         <div className="xl:col-span-2">
-          <Panel title="Expense Breakdown (MTD)">
+          <Panel
+            title="Expense Breakdown (MTD)"
+            action={
+              <Link href="/expenses" className="text-sm text-violet-800 hover:underline">
+                Add expense
+              </Link>
+            }
+          >
             <ExpensePie data={data?.expenseBreakdown || []} />
           </Panel>
         </div>
@@ -131,9 +254,10 @@ export default function DashboardPage() {
         >
           <div className="space-y-3">
             {(data?.lowStock || []).slice(0, 5).map((item) => (
-              <div
+              <Link
                 key={item._id}
-                className="flex items-center justify-between rounded-xl border border-amber-200/70 bg-amber-50/60 px-3 py-2"
+                href="/inventory"
+                className="flex items-center justify-between rounded-xl border border-amber-200/70 bg-amber-50/60 px-3 py-2 transition hover:border-amber-400"
               >
                 <div>
                   <p className="font-medium text-violet-950">{item.name}</p>
@@ -142,7 +266,7 @@ export default function DashboardPage() {
                 <p className="text-sm font-semibold text-amber-800">
                   {item.quantity}/{item.reorderLevel}
                 </p>
-              </div>
+              </Link>
             ))}
             {!data?.lowStock?.length ? (
               <p className="text-sm text-slate-500">All stock levels healthy.</p>
@@ -160,9 +284,10 @@ export default function DashboardPage() {
         >
           <div className="space-y-3">
             {(data?.alerts || []).slice(0, 5).map((alert) => (
-              <div
+              <Link
                 key={alert._id}
-                className="rounded-xl border border-violet-900/10 bg-violet-50/40 px-3 py-2"
+                href="/alerts"
+                className="block rounded-xl border border-violet-900/10 bg-violet-50/40 px-3 py-2 transition hover:border-violet-700/30"
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium text-violet-950">{alert.title}</p>
@@ -171,7 +296,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-slate-600">{alert.message}</p>
-              </div>
+              </Link>
             ))}
             {!data?.alerts?.length ? (
               <p className="text-sm text-slate-500">No alerts yet.</p>

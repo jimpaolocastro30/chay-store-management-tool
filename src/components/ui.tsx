@@ -1,14 +1,17 @@
 import { ReactNode } from "react";
+import Link from "next/link";
 
 export function StatCard({
   label,
   value,
   hint,
+  href,
   tone = "default",
 }: {
   label: string;
   value: string;
   hint?: string;
+  href?: string;
   tone?: "default" | "good" | "warn" | "bad";
 }) {
   const tones = {
@@ -18,9 +21,11 @@ export function StatCard({
     bad: "from-white to-rose-50 border-rose-200/80",
   };
 
-  return (
+  const card = (
     <div
-      className={`rounded-2xl border bg-gradient-to-br p-4 shadow-[0_10px_30px_-20px_rgba(124,58,237,0.45)] ${tones[tone]}`}
+      className={`rounded-2xl border bg-gradient-to-br p-4 shadow-[0_10px_30px_-20px_rgba(124,58,237,0.45)] ${tones[tone]} ${
+        href ? "transition hover:border-violet-700/40 hover:shadow-[0_12px_36px_-18px_rgba(124,58,237,0.55)]" : ""
+      }`}
     >
       <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
         {label}
@@ -31,6 +36,9 @@ export function StatCard({
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </div>
   );
+
+  if (!href) return card;
+  return <Link href={href}>{card}</Link>;
 }
 
 export function Panel({
