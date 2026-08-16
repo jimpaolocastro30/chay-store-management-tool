@@ -11,6 +11,7 @@ const permissions = {
     deleteRecords: true,
     editTransactions: true,
     editInventory: true,
+    usePos: true,
   },
   manager: {
     viewDashboard: true,
@@ -22,6 +23,7 @@ const permissions = {
     deleteRecords: false,
     editTransactions: false,
     editInventory: false,
+    usePos: false,
   },
   staff: {
     viewDashboard: true,
@@ -33,6 +35,7 @@ const permissions = {
     deleteRecords: false,
     editTransactions: false,
     editInventory: false,
+    usePos: false,
   },
 } as const;
 

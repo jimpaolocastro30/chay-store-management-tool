@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Receipt,
+  ShoppingCart,
   TrendingUp,
   Users,
   X,
@@ -22,6 +23,7 @@ import { UserRole } from "@/types";
 
 const links = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/pos", label: "POS", icon: ShoppingCart, permission: "usePos" as const },
   { href: "/revenue", label: "Revenue", icon: TrendingUp },
   { href: "/expenses", label: "Expenses", icon: Receipt },
   { href: "/inventory", label: "Inventory", icon: Boxes },
