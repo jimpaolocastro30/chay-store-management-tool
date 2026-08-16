@@ -1,9 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
-import { Button, Input, Panel } from "@/components/ui";
+import { CategoryFilter } from "@/components/CategoryFilter";
+import { Button, Input, Panel, Select } from "@/components/ui";
+import { useProductCategories } from "@/hooks/useProductCategories";
 import { formatPHP } from "@/lib/utils";
 
 interface Item {
@@ -21,7 +24,7 @@ interface Item {
 const empty = {
   sku: "",
   name: "",
-  category: "",
+  category: "Tea",
   quantity: "0",
   reorderLevel: "5",
   unitCost: "",
@@ -32,8 +35,10 @@ const empty = {
 export default function InventoryPage() {
   const { data: session } = useSession();
   const isOwner = session?.user?.role === "owner";
+  const managedCategories = useProductCategories();
   const [items, setItems] = useState<Item[]>([]);
   const [q, setQ] = useState("");
+  const [category, setCategory] = useState("");
   const [form, setForm] = useState(empty);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,6 +55,15 @@ export default function InventoryPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (editingId || !managedCategories.length) return;
+    setForm((current) =>
+      managedCategories.includes(current.category)
+        ? current
+        : { ...current, category: managedCategories[0] }
+    );
+  }, [managedCategories, editingId]);
 
   function startEdit(item: Item) {
     setEditingId(item._id);
@@ -118,6 +132,25 @@ export default function InventoryPage() {
     await load();
   }
 
+  const categoryOptions = useMemo(() => {
+    const extra = items
+      .map((item) => item.category)
+      .filter((value) => value && !managedCategories.includes(value));
+    return [...managedCategories, ...Array.from(new Set(extra))];
+  }, [items, managedCategories]);
+
+  const visibleItems = useMemo(
+    () => (category ? items.filter((item) => item.category === category) : items),
+    [items, category]
+  );
+
+  const formCategories = useMemo(() => {
+    if (form.category && !categoryOptions.includes(form.category)) {
+      return [...categoryOptions, form.category];
+    }
+    return categoryOptions;
+  }, [categoryOptions, form.category]);
+
   async function onImport(file: File) {
     setImporting(true);
     const body = new FormData();
@@ -161,6 +194,22 @@ export default function InventoryPage() {
         </label>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <CategoryFilter
+          value={category}
+          options={categoryOptions}
+          onChange={setCategory}
+        />
+        {isOwner ? (
+          <Link
+            href="/categories"
+            className="text-sm text-violet-800 hover:underline"
+          >
+            Manage categories
+          </Link>
+        ) : null}
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-5">
         <Panel title={editingId ? "Edit item" : "Add item"}>
           <form onSubmit={onSubmit} className="space-y-3">
@@ -176,12 +225,18 @@ export default function InventoryPage() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
-            <Input
+            <Select
               label="Category"
               required
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
-            />
+            >
+              {formCategories.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Qty"
@@ -265,7 +320,7 @@ export default function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => {
+                  {visibleItems.map((item) => {
                     const low = item.quantity <= item.reorderLevel;
                     return (
                       <tr key={item._id} className="border-b border-violet-900/5">
@@ -342,6 +397,13 @@ export default function InventoryPage() {
                   })}
                 </tbody>
               </table>
+              {!visibleItems.length ? (
+                <p className="py-8 text-center text-slate-500">
+                  {items.length
+                    ? "No items in this category."
+                    : "No inventory items yet."}
+                </p>
+              ) : null}
             </div>
           </Panel>
         </div>

@@ -12,6 +12,8 @@ import {
   ShoppingCart,
   TrendingUp,
   Users,
+  Tags,
+  Settings,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ExpensePie, TrendChart } from "@/components/Charts";
@@ -71,6 +73,13 @@ const shortcuts = [
     icon: Boxes,
   },
   {
+    href: "/categories",
+    label: "Manage categories",
+    hint: "POS and inventory groups",
+    icon: Tags,
+    permission: "editInventory" as const,
+  },
+  {
     href: "/prices",
     label: "Set prices",
     hint: "Cost and sell price",
@@ -97,6 +106,12 @@ const shortcuts = [
     hint: "Roles and access",
     icon: Users,
     permission: "manageUsers" as const,
+  },
+  {
+    href: "/settings",
+    label: "Update profile",
+    hint: "Name, email, password",
+    icon: Settings,
   },
 ];
 

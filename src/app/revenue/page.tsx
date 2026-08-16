@@ -1,14 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
+import { useProductCategories } from "@/hooks/useProductCategories";
 import { formatDatePH, formatPHP, todayInputDate, toInputDate } from "@/lib/utils";
 
 interface Tx {
   _id: string;
   amount: number;
+  category?: string;
   description: string;
   date: string;
   paymentMethod?: string;
@@ -17,6 +21,7 @@ interface Tx {
 
 const emptyForm = {
   amount: "",
+  category: "Tea",
   description: "",
   date: todayInputDate(),
   paymentMethod: "cash",
@@ -26,9 +31,11 @@ const emptyForm = {
 export default function RevenuePage() {
   const { data: session } = useSession();
   const isOwner = session?.user?.role === "owner";
+  const managedCategories = useProductCategories();
   const [items, setItems] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [category, setCategory] = useState("");
   const [form, setForm] = useState(emptyForm);
 
   async function load() {
@@ -40,10 +47,20 @@ export default function RevenuePage() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (editingId || !managedCategories.length) return;
+    setForm((current) =>
+      managedCategories.includes(current.category)
+        ? current
+        : { ...current, category: managedCategories[0] }
+    );
+  }, [managedCategories, editingId]);
+
   function startEdit(item: Tx) {
     setEditingId(item._id);
     setForm({
       amount: String(item.amount),
+      category: item.category || "Tea",
       description: item.description,
       date: toInputDate(item.date),
       paymentMethod: item.paymentMethod || "cash",
@@ -62,6 +79,7 @@ export default function RevenuePage() {
     const payload = {
       type: "revenue",
       amount: Number(form.amount),
+      category: form.category,
       description: form.description,
       date: form.date,
       paymentMethod: form.paymentMethod,
@@ -93,13 +111,49 @@ export default function RevenuePage() {
     await load();
   }
 
-  const total = items.reduce((a, i) => a + i.amount, 0);
+  const categoryOptions = useMemo(() => {
+    const base = [...managedCategories];
+    if (!base.includes("Mixed")) base.push("Mixed");
+    const extra = items
+      .map((item) => item.category)
+      .filter((value): value is string => Boolean(value) && !base.includes(value));
+    return [...base, ...Array.from(new Set(extra))];
+  }, [items, managedCategories]);
+
+  const visibleItems = useMemo(
+    () => (category ? items.filter((item) => item.category === category) : items),
+    [items, category]
+  );
+
+  const formCategories = useMemo(() => {
+    if (form.category && !categoryOptions.includes(form.category)) {
+      return [...categoryOptions, form.category];
+    }
+    return categoryOptions;
+  }, [categoryOptions, form.category]);
+
+  const total = visibleItems.reduce((a, i) => a + i.amount, 0);
 
   return (
     <AppShell
       title="Revenue"
       subtitle="Enter daily sales and track collections"
     >
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <CategoryFilter
+          value={category}
+          options={categoryOptions}
+          onChange={setCategory}
+        />
+        {isOwner ? (
+          <Link
+            href="/categories"
+            className="text-sm text-violet-800 hover:underline"
+          >
+            Manage categories
+          </Link>
+        ) : null}
+      </div>
       <div className="grid gap-6 lg:grid-cols-5">
         <Panel
           title={editingId ? "Edit revenue entry" : "New revenue entry"}
@@ -119,6 +173,18 @@ export default function RevenuePage() {
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
             />
+            <Select
+              label="Category"
+              required
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            >
+              {formCategories.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
             <TextArea
               label="Description"
               required
@@ -176,6 +242,7 @@ export default function RevenuePage() {
                 <thead className="border-b border-violet-900/10 text-slate-500">
                   <tr>
                     <th className="py-2 pr-3 font-medium">Date</th>
+                    <th className="py-2 pr-3 font-medium">Category</th>
                     <th className="py-2 pr-3 font-medium">Description</th>
                     <th className="py-2 pr-3 font-medium">Method</th>
                     <th className="py-2 font-medium">Amount</th>
@@ -185,11 +252,12 @@ export default function RevenuePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => (
+                  {visibleItems.map((item) => (
                     <tr key={item._id} className="border-b border-violet-900/5">
                       <td className="py-3 pr-3 whitespace-nowrap">
                         {formatDatePH(item.date)}
                       </td>
+                      <td className="py-3 pr-3">{item.category || "—"}</td>
                       <td className="py-3 pr-3">{item.description}</td>
                       <td className="py-3 pr-3 capitalize">
                         {item.paymentMethod || "—"}
@@ -223,8 +291,10 @@ export default function RevenuePage() {
                   ))}
                 </tbody>
               </table>
-              {!items.length ? (
-                <p className="py-8 text-center text-slate-500">No revenue yet.</p>
+              {!visibleItems.length ? (
+                <p className="py-8 text-center text-slate-500">
+                  {items.length ? "No revenue in this category." : "No revenue yet."}
+                </p>
               ) : null}
             </div>
           </Panel>

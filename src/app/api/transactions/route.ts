@@ -7,19 +7,7 @@ import { requireSession } from "@/lib/api";
 const schema = z.object({
   type: z.enum(["revenue", "expense", "loss"]),
   amount: z.number().positive(),
-  category: z
-    .enum([
-      "cogs",
-      "rent",
-      "utilities",
-      "payroll",
-      "marketing",
-      "supplies",
-      "transport",
-      "damage",
-      "other",
-    ])
-    .optional(),
+  category: z.string().optional(),
   description: z.string().min(2),
   date: z.string(),
   paymentMethod: z.string().optional(),
@@ -35,9 +23,11 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get("type");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const category = searchParams.get("category");
 
   const filter: Record<string, unknown> = {};
   if (type) filter.type = type;
+  if (category) filter.category = category;
   if (from || to) {
     filter.date = {};
     if (from) (filter.date as Record<string, Date>).$gte = new Date(from);

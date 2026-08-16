@@ -13,7 +13,9 @@ import {
   LayoutDashboard,
   LogOut,
   Receipt,
+  Settings,
   ShoppingCart,
+  Tags,
   TrendingUp,
   Users,
   X,
@@ -27,11 +29,13 @@ const links = [
   { href: "/revenue", label: "Revenue", icon: TrendingUp },
   { href: "/expenses", label: "Expenses", icon: Receipt },
   { href: "/inventory", label: "Inventory", icon: Boxes },
+  { href: "/categories", label: "Categories", icon: Tags, permission: "editInventory" as const },
   { href: "/prices", label: "Prices", icon: CircleDollarSign, permission: "editInventory" as const },
   { href: "/capital", label: "Capital", icon: Landmark, permission: "manageCapital" as const },
   { href: "/reports", label: "Reports", icon: FileSpreadsheet, permission: "exportReports" as const },
   { href: "/alerts", label: "Alerts", icon: AlertTriangle },
   { href: "/users", label: "Users", icon: Users, permission: "manageUsers" as const },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar({
@@ -104,14 +108,21 @@ export function Sidebar({
         </nav>
 
         <div className="border-t border-white/10 p-4">
-          <div className="mb-3 rounded-xl bg-white/10 px-3 py-3">
+          <Link
+            href="/settings"
+            onClick={onClose}
+            className="mb-3 block rounded-xl bg-white/10 px-3 py-3 transition hover:bg-white/15"
+          >
             <p className="text-sm font-medium text-white">
               {data?.user?.name}
             </p>
             <p className="text-xs capitalize text-violet-100/70">
               {role} · {data?.user?.email}
             </p>
-          </div>
+            <p className="mt-1 text-[11px] text-violet-200/80">
+              Update profile
+            </p>
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-violet-100/80 transition hover:bg-white/10 hover:text-white"

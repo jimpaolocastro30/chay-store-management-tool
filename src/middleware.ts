@@ -14,6 +14,10 @@ export default withAuth(
       return NextResponse.redirect(new URL("/", req.url));
     }
 
+    if (path.startsWith("/categories") && role !== "owner") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
     if (path.startsWith("/pos") && role !== "owner") {
       return NextResponse.redirect(new URL("/", req.url));
     }
@@ -41,11 +45,13 @@ export const config = {
     "/revenue/:path*",
     "/expenses/:path*",
     "/inventory/:path*",
+    "/categories/:path*",
     "/prices/:path*",
     "/pos/:path*",
     "/capital/:path*",
     "/reports/:path*",
     "/users/:path*",
     "/alerts/:path*",
+    "/settings/:path*",
   ],
 };

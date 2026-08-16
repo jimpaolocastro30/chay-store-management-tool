@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button, Input, Panel, Select } from "@/components/ui";
+import { useProductCategories } from "@/hooks/useProductCategories";
 import { formatPHP } from "@/lib/utils";
 
 interface CatalogItem {
@@ -25,8 +28,10 @@ export default function PosPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const isOwner = session?.user?.role === "owner";
+  const managedCategories = useProductCategories();
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [q, setQ] = useState("");
+  const [category, setCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [reference, setReference] = useState("");
@@ -60,6 +65,18 @@ export default function PosPage() {
   const total = useMemo(
     () => cart.reduce((sum, line) => sum + line.item.sellingPrice * line.quantity, 0),
     [cart]
+  );
+
+  const categoryOptions = useMemo(() => {
+    const extra = catalog
+      .map((item) => item.category)
+      .filter((value) => value && !managedCategories.includes(value));
+    return [...managedCategories, ...Array.from(new Set(extra))];
+  }, [catalog, managedCategories]);
+
+  const visibleCatalog = useMemo(
+    () => (category ? catalog.filter((item) => item.category === category) : catalog),
+    [catalog, category]
   );
 
   function addToCart(item: CatalogItem) {
@@ -154,8 +171,22 @@ export default function PosPage() {
             </Button>
           </div>
 
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CategoryFilter
+              value={category}
+              options={categoryOptions}
+              onChange={setCategory}
+            />
+            <Link
+              href="/categories"
+              className="text-sm text-violet-800 hover:underline"
+            >
+              Manage categories
+            </Link>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
-            {catalog.map((item) => {
+            {visibleCatalog.map((item) => {
               const inCart =
                 cart.find((line) => line.item._id === item._id)?.quantity || 0;
               const soldOut = item.quantity <= 0;
@@ -183,9 +214,11 @@ export default function PosPage() {
               );
             })}
           </div>
-          {!catalog.length ? (
+          {!visibleCatalog.length ? (
             <p className="rounded-2xl border border-violet-900/10 bg-white p-8 text-center text-slate-500">
-              No sellable items. Set a selling price in Prices first.
+              {catalog.length
+                ? "No items in this category."
+                : "No sellable items. Set a selling price in Prices first."}
             </p>
           ) : null}
         </div>

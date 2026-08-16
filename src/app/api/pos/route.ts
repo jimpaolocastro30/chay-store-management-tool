@@ -88,9 +88,16 @@ export async function POST(req: NextRequest) {
       .map((row) => `${row.sku} x${row.quantity}`)
       .join(", ");
 
+    const categories = [
+      ...new Set(pending.map((row) => row.item.category).filter(Boolean)),
+    ];
+    const saleCategory =
+      categories.length === 1 ? String(categories[0]) : "Mixed";
+
     const sale = await Transaction.create({
       type: "revenue",
       amount: Math.round(revenue * 100) / 100,
+      category: saleCategory,
       description: `POS sale: ${summary}`,
       date: new Date(),
       paymentMethod: body.paymentMethod,

@@ -6,6 +6,8 @@ import { Transaction } from "@/models/Transaction";
 import { InventoryItem } from "@/models/InventoryItem";
 import { CapitalEntry } from "@/models/CapitalEntry";
 import { Alert } from "@/models/Alert";
+import { Category } from "@/models/Category";
+import { PRODUCT_CATEGORIES } from "@/lib/categories";
 
 export async function POST() {
   const allowed =
@@ -28,6 +30,7 @@ export async function POST() {
       InventoryItem.deleteMany({}),
       CapitalEntry.deleteMany({}),
       Alert.deleteMany({}),
+      Category.deleteMany({}),
     ]);
 
     const password = await bcrypt.hash("password123", 10);
@@ -80,6 +83,13 @@ export async function POST() {
         createdBy: owner._id,
       },
     ]);
+
+    await Category.insertMany(
+      PRODUCT_CATEGORIES.map((name, index) => ({
+        name,
+        sortOrder: (index + 1) * 10,
+      }))
+    );
 
     await InventoryItem.create([
       {

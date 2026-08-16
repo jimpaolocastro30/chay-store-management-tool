@@ -5,7 +5,7 @@ export interface ITransaction {
   _id: mongoose.Types.ObjectId;
   type: TransactionType;
   amount: number;
-  category?: ExpenseCategory;
+  category?: ExpenseCategory | string;
   description: string;
   date: Date;
   paymentMethod?: string;
@@ -24,20 +24,7 @@ const TransactionSchema = new Schema<ITransaction>(
       index: true,
     },
     amount: { type: Number, required: true, min: 0 },
-    category: {
-      type: String,
-      enum: [
-        "cogs",
-        "rent",
-        "utilities",
-        "payroll",
-        "marketing",
-        "supplies",
-        "transport",
-        "damage",
-        "other",
-      ],
-    },
+    category: { type: String, trim: true, index: true },
     description: { type: String, required: true, trim: true },
     date: { type: Date, required: true, index: true },
     paymentMethod: { type: String, default: "cash" },

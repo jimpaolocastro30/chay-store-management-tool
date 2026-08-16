@@ -23,9 +23,11 @@ export async function GET(req: NextRequest) {
   await connectDB();
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q");
+  const category = searchParams.get("category");
   const lowStock = searchParams.get("lowStock") === "true";
 
   const filter: Record<string, unknown> = { active: true };
+  if (category) filter.category = category;
   if (q) {
     filter.$or = [
       { name: { $regex: q, $options: "i" } },

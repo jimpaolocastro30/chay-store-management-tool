@@ -7,19 +7,7 @@ import { requireSession } from "@/lib/api";
 const schema = z.object({
   type: z.enum(["revenue", "expense", "loss"]).optional(),
   amount: z.number().positive().optional(),
-  category: z
-    .enum([
-      "cogs",
-      "rent",
-      "utilities",
-      "payroll",
-      "marketing",
-      "supplies",
-      "transport",
-      "damage",
-      "other",
-    ])
-    .optional(),
+  category: z.string().optional(),
   description: z.string().min(2).optional(),
   date: z.string().optional(),
   paymentMethod: z.string().optional(),
