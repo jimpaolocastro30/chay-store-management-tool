@@ -1,43 +1,46 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default withAuth(
-  function proxy(req) {
-    const role = req.nextauth.token?.role;
-    const path = req.nextUrl.pathname;
+export async function proxy(req: NextRequest) {
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+  const path = req.nextUrl.pathname;
 
-    if (path.startsWith("/users") && role !== "owner") {
-      return NextResponse.redirect(new URL("/", req.url));
+  if (!token) {
+    const loginUrl = new URL("/login", req.url);
+    if (path !== "/") {
+      loginUrl.searchParams.set("callbackUrl", path);
     }
-
-    if (path.startsWith("/prices") && role !== "owner") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    if (path.startsWith("/categories") && role !== "owner") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    if (path.startsWith("/pos") && role !== "owner") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    if (path.startsWith("/capital") && role === "staff") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const path = req.nextUrl.pathname;
-        if (path.startsWith("/login")) return true;
-        return !!token;
-      },
-    },
+    return NextResponse.redirect(loginUrl);
   }
-);
+
+  const role = token.role as string | undefined;
+
+  if (path.startsWith("/users") && role !== "owner") {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  if (path.startsWith("/prices") && role !== "owner") {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  if (path.startsWith("/categories") && role !== "owner") {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  if (path.startsWith("/pos") && role !== "owner") {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  if (path.startsWith("/capital") && role === "staff") {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

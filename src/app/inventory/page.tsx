@@ -48,7 +48,8 @@ export default function InventoryPage() {
     const res = await fetch(
       `/api/inventory${search ? `?q=${encodeURIComponent(search)}` : ""}`
     );
-    setItems(await res.json());
+    const data = await res.json();
+    setItems(Array.isArray(data) ? data : []);
   }
 
   useEffect(() => {

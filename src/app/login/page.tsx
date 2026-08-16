@@ -1,17 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { signIn } from "next-auth/react";
+import { FormEvent, useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button, Input } from "@/components/ui";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("owner@chay.ph");
-  const [password, setPassword] = useState("password123");
+  const { status } = useSession();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/");
+    }
+  }, [status, router]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -24,15 +31,13 @@ export default function LoginPage() {
       redirect: false,
     });
 
-    setLoading(false);
-
-    if (res?.error) {
+    if (res?.error || !res?.ok) {
+      setLoading(false);
       setError("Invalid email or password. Seed demo data if this is a fresh setup.");
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    window.location.assign("/");
   }
 
   async function seedDemo() {
@@ -119,8 +124,9 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-4 text-xs leading-relaxed text-slate-500">
-            Demo: owner@chay.ph / password123 (also manager@chay.ph,
-            staff@chay.ph)
+            Use the email and password for your account. After loading demo
+            data, the defaults are owner@chay.ph, manager@chay.ph, and
+            staff@chay.ph with password123.
           </p>
         </form>
       </div>
