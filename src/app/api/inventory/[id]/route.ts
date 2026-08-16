@@ -3,8 +3,10 @@ import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { InventoryItem } from "@/models/InventoryItem";
 import { requireSession } from "@/lib/api";
+import { can } from "@/lib/utils";
+import { UserRole } from "@/types";
 
-const schema = z.object({
+const ownerSchema = z.object({
   sku: z.string().min(2).optional(),
   name: z.string().min(2).optional(),
   category: z.string().min(2).optional(),
@@ -17,21 +19,27 @@ const schema = z.object({
   active: z.boolean().optional(),
 });
 
+const qtySchema = z.object({
+  quantity: z.number().min(0),
+});
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireSession("manageInventory");
-  if (error) return error;
+  const { error, session } = await requireSession("manageInventory");
+  if (error || !session) return error;
 
   try {
     const { id } = await params;
-    const body = schema.parse(await req.json());
+    const json = await req.json();
+    const isOwner = can(session.user.role as UserRole, "editInventory");
+    const body = isOwner ? ownerSchema.parse(json) : qtySchema.parse(json);
     await connectDB();
 
     const update = {
       ...body,
-      ...(body.sku ? { sku: body.sku.toUpperCase() } : {}),
+      ...("sku" in body && body.sku ? { sku: body.sku.toUpperCase() } : {}),
     };
 
     const item = await InventoryItem.findByIdAndUpdate(id, update, {

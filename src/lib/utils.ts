@@ -9,6 +9,8 @@ const permissions = {
     manageUsers: true,
     exportReports: true,
     deleteRecords: true,
+    editTransactions: true,
+    editInventory: true,
   },
   manager: {
     viewDashboard: true,
@@ -18,6 +20,8 @@ const permissions = {
     manageUsers: false,
     exportReports: true,
     deleteRecords: false,
+    editTransactions: false,
+    editInventory: false,
   },
   staff: {
     viewDashboard: true,
@@ -27,6 +31,8 @@ const permissions = {
     manageUsers: false,
     exportReports: false,
     deleteRecords: false,
+    editTransactions: false,
+    editInventory: false,
   },
 } as const;
 
@@ -68,9 +74,13 @@ export function formatPHP(amount: number) {
   return `${n < 0 ? "-" : ""}₱${grouped}.${frac}`;
 }
 
-export function todayInputDate() {
-  const { year, month, day } = manilaParts(new Date());
+export function toInputDate(value?: string | Date) {
+  const { year, month, day } = manilaParts(value ? new Date(value) : new Date());
   return `${year}-${month}-${day}`;
+}
+
+export function todayInputDate() {
+  return toInputDate();
 }
 
 export function formatDatePH(value: string | Date) {
@@ -85,6 +95,16 @@ export function formatDateTimePH(value: string | Date) {
 
 export function formatPercent(value: number) {
   return `${(value || 0).toFixed(1)}%`;
+}
+
+export function markupPercent(cost: number, sell: number) {
+  if (!cost) return 0;
+  return ((sell - cost) / cost) * 100;
+}
+
+export function marginPercent(cost: number, sell: number) {
+  if (!sell) return 0;
+  return ((sell - cost) / sell) * 100;
 }
 
 export function startOfMonth(date = new Date()) {

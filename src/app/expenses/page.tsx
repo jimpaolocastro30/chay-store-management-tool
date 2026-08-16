@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
-import { formatDatePH, formatPHP, todayInputDate } from "@/lib/utils";
+import { formatDatePH, formatPHP, todayInputDate, toInputDate } from "@/lib/utils";
 
 interface Tx {
   _id: string;
@@ -26,16 +27,21 @@ const categories = [
   "other",
 ];
 
+const emptyForm = {
+  type: "expense",
+  amount: "",
+  category: "cogs",
+  description: "",
+  date: todayInputDate(),
+};
+
 export default function ExpensesPage() {
+  const { data: session } = useSession();
+  const isOwner = session?.user?.role === "owner";
   const [items, setItems] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    type: "expense",
-    amount: "",
-    category: "cogs",
-    description: "",
-    date: todayInputDate(),
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   async function load() {
     const [expenses, losses] = await Promise.all([
@@ -53,22 +59,55 @@ export default function ExpensesPage() {
     load();
   }, []);
 
+  function startEdit(item: Tx) {
+    setEditingId(item._id);
+    setForm({
+      type: item.type || "expense",
+      amount: String(item.amount),
+      category: item.category || "other",
+      description: item.description,
+      date: toInputDate(item.date),
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm({ ...emptyForm, date: todayInputDate() });
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: form.type,
-        amount: Number(form.amount),
-        category: form.category,
-        description: form.description,
-        date: form.date,
-      }),
-    });
-    setForm((f) => ({ ...f, amount: "", description: "" }));
+    const payload = {
+      type: form.type,
+      amount: Number(form.amount),
+      category: form.category,
+      description: form.description,
+      date: form.date,
+    };
+
+    const res = editingId
+      ? await fetch(`/api/transactions/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      : await fetch("/api/transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
     setLoading(false);
+    if (!res.ok) return;
+    cancelEdit();
+    await load();
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this expense or loss entry?")) return;
+    await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+    if (editingId === id) cancelEdit();
     await load();
   }
 
@@ -78,7 +117,7 @@ export default function ExpensesPage() {
       subtitle="Categorize operating costs, COGS, and inventory losses"
     >
       <div className="grid gap-6 lg:grid-cols-5">
-        <Panel title="New entry">
+        <Panel title={editingId ? "Edit entry" : "New entry"}>
           <form onSubmit={onSubmit} className="space-y-3">
             <Select
               label="Type"
@@ -125,8 +164,18 @@ export default function ExpensesPage() {
               onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Saving…" : "Save entry"}
+              {loading ? "Saving…" : editingId ? "Update entry" : "Save entry"}
             </Button>
+            {editingId ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={cancelEdit}
+              >
+                Cancel edit
+              </Button>
+            ) : null}
           </form>
         </Panel>
 
@@ -141,6 +190,9 @@ export default function ExpensesPage() {
                     <th className="py-2 pr-3 font-medium">Category</th>
                     <th className="py-2 pr-3 font-medium">Description</th>
                     <th className="py-2 font-medium">Amount</th>
+                    {isOwner ? (
+                      <th className="py-2 pl-3 font-medium">Actions</th>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -157,6 +209,28 @@ export default function ExpensesPage() {
                       <td className="py-3 font-medium text-rose-700">
                         {formatPHP(item.amount)}
                       </td>
+                      {isOwner ? (
+                        <td className="py-3 pl-3">
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => startEdit(item)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="danger"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => remove(item._id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>

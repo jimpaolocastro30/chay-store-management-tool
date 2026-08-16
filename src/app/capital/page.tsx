@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
-import { formatDatePH, formatPHP, todayInputDate } from "@/lib/utils";
+import { formatDatePH, formatPHP, todayInputDate, toInputDate } from "@/lib/utils";
 
 interface Entry {
   _id: string;
@@ -13,15 +13,18 @@ interface Entry {
   date: string;
 }
 
+const emptyForm = {
+  type: "investment",
+  amount: "",
+  description: "",
+  date: todayInputDate(),
+};
+
 export default function CapitalPage() {
   const [items, setItems] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    type: "investment",
-    amount: "",
-    description: "",
-    date: todayInputDate(),
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   async function load() {
     const res = await fetch("/api/capital");
@@ -32,22 +35,52 @@ export default function CapitalPage() {
     load();
   }, []);
 
+  function startEdit(item: Entry) {
+    setEditingId(item._id);
+    setForm({
+      type: item.type,
+      amount: String(item.amount),
+      description: item.description,
+      date: toInputDate(item.date),
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm({ ...emptyForm, date: todayInputDate() });
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch("/api/capital", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        amount: Number(form.amount),
-      }),
-    });
+    const payload = {
+      ...form,
+      amount: Number(form.amount),
+    };
+
+    const res = editingId
+      ? await fetch(`/api/capital/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      : await fetch("/api/capital", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
     setLoading(false);
-    if (res.ok) {
-      setForm((f) => ({ ...f, amount: "", description: "" }));
-      await load();
-    }
+    if (!res.ok) return;
+    cancelEdit();
+    await load();
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this capital entry?")) return;
+    await fetch(`/api/capital/${id}`, { method: "DELETE" });
+    if (editingId === id) cancelEdit();
+    await load();
   }
 
   const invested = items
@@ -81,7 +114,9 @@ export default function CapitalPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        <Panel title="Record capital movement">
+        <Panel
+          title={editingId ? "Edit capital movement" : "Record capital movement"}
+        >
           <form onSubmit={onSubmit} className="space-y-3">
             <Select
               label="Type"
@@ -118,8 +153,18 @@ export default function CapitalPage() {
               onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Saving…" : "Save entry"}
+              {loading ? "Saving…" : editingId ? "Update entry" : "Save entry"}
             </Button>
+            {editingId ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={cancelEdit}
+              >
+                Cancel edit
+              </Button>
+            ) : null}
           </form>
         </Panel>
 
@@ -133,6 +178,7 @@ export default function CapitalPage() {
                     <th className="py-2 pr-3 font-medium">Type</th>
                     <th className="py-2 pr-3 font-medium">Description</th>
                     <th className="py-2 font-medium">Amount</th>
+                    <th className="py-2 pl-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -145,6 +191,26 @@ export default function CapitalPage() {
                       <td className="py-3 pr-3">{item.description}</td>
                       <td className="py-3 font-medium">
                         {formatPHP(item.amount)}
+                      </td>
+                      <td className="py-3 pl-3">
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="px-3 py-1.5 text-xs"
+                            onClick={() => startEdit(item)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            className="px-3 py-1.5 text-xs"
+                            onClick={() => remove(item._id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

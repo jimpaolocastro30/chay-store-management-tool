@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
-import { formatDatePH, formatPHP, todayInputDate } from "@/lib/utils";
+import { formatDatePH, formatPHP, todayInputDate, toInputDate } from "@/lib/utils";
 
 interface Tx {
   _id: string;
@@ -14,16 +15,21 @@ interface Tx {
   reference?: string;
 }
 
+const emptyForm = {
+  amount: "",
+  description: "",
+  date: todayInputDate(),
+  paymentMethod: "cash",
+  reference: "",
+};
+
 export default function RevenuePage() {
+  const { data: session } = useSession();
+  const isOwner = session?.user?.role === "owner";
   const [items, setItems] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    amount: "",
-    description: "",
-    date: todayInputDate(),
-    paymentMethod: "cash",
-    reference: "",
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   async function load() {
     const res = await fetch("/api/transactions?type=revenue");
@@ -34,28 +40,56 @@ export default function RevenuePage() {
     load();
   }, []);
 
+  function startEdit(item: Tx) {
+    setEditingId(item._id);
+    setForm({
+      amount: String(item.amount),
+      description: item.description,
+      date: toInputDate(item.date),
+      paymentMethod: item.paymentMethod || "cash",
+      reference: item.reference || "",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm({ ...emptyForm, date: todayInputDate() });
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "revenue",
-        amount: Number(form.amount),
-        description: form.description,
-        date: form.date,
-        paymentMethod: form.paymentMethod,
-        reference: form.reference || undefined,
-      }),
-    });
-    setForm((f) => ({
-      ...f,
-      amount: "",
-      description: "",
-      reference: "",
-    }));
+    const payload = {
+      type: "revenue",
+      amount: Number(form.amount),
+      description: form.description,
+      date: form.date,
+      paymentMethod: form.paymentMethod,
+      reference: form.reference || undefined,
+    };
+
+    const res = editingId
+      ? await fetch(`/api/transactions/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      : await fetch("/api/transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
     setLoading(false);
+    if (!res.ok) return;
+    cancelEdit();
+    await load();
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this revenue entry?")) return;
+    await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+    if (editingId === id) cancelEdit();
     await load();
   }
 
@@ -67,7 +101,14 @@ export default function RevenuePage() {
       subtitle="Enter daily sales and track collections"
     >
       <div className="grid gap-6 lg:grid-cols-5">
-        <Panel title="New revenue entry" action={<span className="text-sm text-slate-500">Total listed {formatPHP(total)}</span>}>
+        <Panel
+          title={editingId ? "Edit revenue entry" : "New revenue entry"}
+          action={
+            <span className="text-sm text-slate-500">
+              Total listed {formatPHP(total)}
+            </span>
+          }
+        >
           <form onSubmit={onSubmit} className="space-y-3">
             <Input
               label="Amount (PHP)"
@@ -113,8 +154,18 @@ export default function RevenuePage() {
               onChange={(e) => setForm({ ...form, reference: e.target.value })}
             />
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Saving…" : "Save revenue"}
+              {loading ? "Saving…" : editingId ? "Update revenue" : "Save revenue"}
             </Button>
+            {editingId ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={cancelEdit}
+              >
+                Cancel edit
+              </Button>
+            ) : null}
           </form>
         </Panel>
 
@@ -128,6 +179,9 @@ export default function RevenuePage() {
                     <th className="py-2 pr-3 font-medium">Description</th>
                     <th className="py-2 pr-3 font-medium">Method</th>
                     <th className="py-2 font-medium">Amount</th>
+                    {isOwner ? (
+                      <th className="py-2 pl-3 font-medium">Actions</th>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -143,6 +197,28 @@ export default function RevenuePage() {
                       <td className="py-3 font-medium text-emerald-800">
                         {formatPHP(item.amount)}
                       </td>
+                      {isOwner ? (
+                        <td className="py-3 pl-3">
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => startEdit(item)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="danger"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => remove(item._id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>

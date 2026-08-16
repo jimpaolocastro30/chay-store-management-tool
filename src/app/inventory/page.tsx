@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel } from "@/components/ui";
 import { formatPHP } from "@/lib/utils";
@@ -29,9 +30,12 @@ const empty = {
 };
 
 export default function InventoryPage() {
+  const { data: session } = useSession();
+  const isOwner = session?.user?.role === "owner";
   const [items, setItems] = useState<Item[]>([]);
   const [q, setQ] = useState("");
   const [form, setForm] = useState(empty);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
 
@@ -47,25 +51,54 @@ export default function InventoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function startEdit(item: Item) {
+    setEditingId(item._id);
+    setForm({
+      sku: item.sku,
+      name: item.name,
+      category: item.category,
+      quantity: String(item.quantity),
+      reorderLevel: String(item.reorderLevel),
+      unitCost: String(item.unitCost),
+      sellingPrice: String(item.sellingPrice),
+      location: item.location || "Main Store",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(empty);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/inventory", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sku: form.sku,
-        name: form.name,
-        category: form.category,
-        quantity: Number(form.quantity),
-        reorderLevel: Number(form.reorderLevel),
-        unitCost: Number(form.unitCost),
-        sellingPrice: Number(form.sellingPrice),
-        location: form.location,
-      }),
-    });
-    setForm(empty);
+    const payload = {
+      sku: form.sku,
+      name: form.name,
+      category: form.category,
+      quantity: Number(form.quantity),
+      reorderLevel: Number(form.reorderLevel),
+      unitCost: Number(form.unitCost),
+      sellingPrice: Number(form.sellingPrice),
+      location: form.location,
+    };
+
+    const res = editingId
+      ? await fetch(`/api/inventory/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      : await fetch("/api/inventory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
     setLoading(false);
+    if (!res.ok) return;
+    cancelEdit();
     await load();
   }
 
@@ -75,6 +108,13 @@ export default function InventoryPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quantity }),
     });
+    await load();
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Remove this inventory item?")) return;
+    await fetch(`/api/inventory/${id}`, { method: "DELETE" });
+    if (editingId === id) cancelEdit();
     await load();
   }
 
@@ -122,7 +162,7 @@ export default function InventoryPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        <Panel title="Add item">
+        <Panel title={editingId ? "Edit item" : "Add item"}>
           <form onSubmit={onSubmit} className="space-y-3">
             <Input
               label="SKU"
@@ -190,8 +230,22 @@ export default function InventoryPage() {
               onChange={(e) => setForm({ ...form, location: e.target.value })}
             />
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Saving…" : "Add inventory item"}
+              {loading
+                ? "Saving…"
+                : editingId
+                  ? "Update item"
+                  : "Add inventory item"}
             </Button>
+            {editingId ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={cancelEdit}
+              >
+                Cancel edit
+              </Button>
+            ) : null}
           </form>
         </Panel>
 
@@ -205,6 +259,9 @@ export default function InventoryPage() {
                     <th className="py-2 pr-3 font-medium">Qty</th>
                     <th className="py-2 pr-3 font-medium">Value</th>
                     <th className="py-2 font-medium">Adjust</th>
+                    {isOwner ? (
+                      <th className="py-2 pl-3 font-medium">Actions</th>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -258,6 +315,28 @@ export default function InventoryPage() {
                             </button>
                           </div>
                         </td>
+                        {isOwner ? (
+                          <td className="py-3 pl-3">
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className="px-3 py-1.5 text-xs"
+                                onClick={() => startEdit(item)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="danger"
+                                className="px-3 py-1.5 text-xs"
+                                onClick={() => remove(item._id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        ) : null}
                       </tr>
                     );
                   })}
