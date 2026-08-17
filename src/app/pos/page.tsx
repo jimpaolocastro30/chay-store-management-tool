@@ -16,6 +16,7 @@ interface CatalogItem {
   name: string;
   category: string;
   quantity: number;
+  sold?: number;
   sellingPrice: number;
 }
 
@@ -153,8 +154,8 @@ export default function PosPage() {
       title="Point of sale"
       subtitle="Ring up items, collect payment, and update stock"
     >
-      <div className="grid gap-6 xl:grid-cols-5">
-        <div className="xl:col-span-3 space-y-4">
+      <div className="grid gap-6 md:grid-cols-5">
+        <div className="md:col-span-3 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1">
               <Input
@@ -185,7 +186,7 @@ export default function PosPage() {
             </Link>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {visibleCatalog.map((item) => {
               const inCart =
                 cart.find((line) => line.item._id === item._id)?.quantity || 0;
@@ -196,7 +197,7 @@ export default function PosPage() {
                   type="button"
                   disabled={soldOut || inCart >= item.quantity}
                   onClick={() => addToCart(item)}
-                  className="rounded-2xl border border-violet-900/10 bg-white p-4 text-left shadow-sm transition hover:border-violet-700/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-[7.5rem] rounded-2xl border border-violet-900/10 bg-white p-4 text-left shadow-sm transition hover:border-violet-700/40 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <p className="font-medium text-violet-950">{item.name}</p>
                   <p className="text-xs text-slate-500">
@@ -207,7 +208,10 @@ export default function PosPage() {
                       {formatPHP(item.sellingPrice)}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {soldOut ? "Out of stock" : `${item.quantity} in stock`}
+                      {soldOut
+                        ? "Out of stock"
+                        : `${item.quantity} in stock`}
+                      {(item.sold || 0) > 0 ? ` · ${item.sold} sold` : ""}
                     </p>
                   </div>
                 </button>
@@ -223,7 +227,8 @@ export default function PosPage() {
           ) : null}
         </div>
 
-        <div className="xl:col-span-2">
+        <div className="md:col-span-2">
+          <div className="md:sticky md:top-24">
           <Panel
             title="Cart"
             action={
@@ -255,17 +260,17 @@ export default function PosPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      className="rounded-lg border border-violet-900/15 px-2 py-1"
+                      className="min-h-11 min-w-11 rounded-xl border border-violet-900/15"
                       onClick={() => setQty(line.item._id, line.quantity - 1)}
                     >
                       −
                     </button>
-                    <span className="w-6 text-center text-sm">
+                    <span className="w-8 text-center text-sm">
                       {line.quantity}
                     </span>
                     <button
                       type="button"
-                      className="rounded-lg border border-violet-900/15 px-2 py-1"
+                      className="min-h-11 min-w-11 rounded-xl border border-violet-900/15"
                       onClick={() => setQty(line.item._id, line.quantity + 1)}
                     >
                       +
@@ -340,6 +345,7 @@ export default function PosPage() {
               </Panel>
             </div>
           ) : null}
+          </div>
         </div>
       </div>
     </AppShell>

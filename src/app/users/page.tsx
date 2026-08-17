@@ -60,7 +60,7 @@ export default function UsersPage() {
       title="Users"
       subtitle="Role-based access: Owner, Manager, Staff"
     >
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-5">
         <Panel title="Invite user">
           <form onSubmit={onSubmit} className="space-y-3">
             <Input
@@ -104,7 +104,7 @@ export default function UsersPage() {
           </form>
         </Panel>
 
-        <div className="lg:col-span-3">
+        <div className="md:col-span-3">
           <Panel title="Team directory">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">

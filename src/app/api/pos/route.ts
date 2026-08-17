@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
 
     for (const row of pending) {
       row.item.quantity -= row.quantity;
+      row.item.sold = (row.item.sold || 0) + row.quantity;
       await row.item.save();
     }
 

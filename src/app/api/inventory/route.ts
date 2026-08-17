@@ -9,6 +9,7 @@ const schema = z.object({
   name: z.string().min(2),
   category: z.string().min(2),
   quantity: z.number().min(0),
+  sold: z.number().min(0).optional(),
   reorderLevel: z.number().min(0),
   unitCost: z.number().min(0),
   sellingPrice: z.number().min(0),
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
     const item = await InventoryItem.create({
       ...body,
       sku: body.sku.toUpperCase(),
+      sold: body.sold ?? 0,
     });
     return NextResponse.json(item, { status: 201 });
   } catch (err) {

@@ -155,7 +155,7 @@ export default function RevenuePage() {
           </Link>
         ) : null}
       </div>
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-5">
         <Panel
           title={editingId ? "Edit revenue entry" : "New revenue entry"}
           action={
@@ -236,7 +236,7 @@ export default function RevenuePage() {
           </form>
         </Panel>
 
-        <div className="lg:col-span-3">
+        <div className="md:col-span-3">
           <Panel title="Recent revenue">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">

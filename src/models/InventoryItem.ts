@@ -6,6 +6,7 @@ export interface IInventoryItem {
   name: string;
   category: string;
   quantity: number;
+  sold: number;
   reorderLevel: number;
   unitCost: number;
   sellingPrice: number;
@@ -22,6 +23,7 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
     name: { type: String, required: true, trim: true },
     category: { type: String, required: true, trim: true },
     quantity: { type: Number, required: true, min: 0, default: 0 },
+    sold: { type: Number, required: true, min: 0, default: 0 },
     reorderLevel: { type: Number, required: true, min: 0, default: 5 },
     unitCost: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },

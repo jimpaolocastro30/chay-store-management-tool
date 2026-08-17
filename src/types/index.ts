@@ -26,6 +26,7 @@ export interface DashboardKpis {
   netMargin: number;
   inventoryValue: number;
   inventoryCount: number;
+  unitsSold: number;
   lowStockCount: number;
   inventoryTurnover: number;
   totalCapital: number;

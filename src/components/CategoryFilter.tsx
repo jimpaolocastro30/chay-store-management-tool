@@ -19,7 +19,7 @@ export function CategoryFilter({
             key={chip}
             type="button"
             onClick={() => onChange(chip === "All" ? "" : chip)}
-            className={`rounded-full px-3 py-1.5 text-sm transition ${
+            className={`min-h-11 rounded-full px-4 py-2 text-sm transition ${
               active
                 ? "bg-violet-800 text-white"
                 : "border border-violet-900/15 bg-white text-violet-900 hover:border-violet-700/40"

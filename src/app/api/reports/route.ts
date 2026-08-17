@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
       name: i.name,
       category: i.category,
       quantity: i.quantity,
+      sold: i.sold || 0,
       unitCost: i.unitCost,
       sellingPrice: i.sellingPrice,
       stockValue: i.quantity * i.unitCost,

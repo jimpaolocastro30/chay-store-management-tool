@@ -113,7 +113,7 @@ export default function CapitalPage() {
         </Panel>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-5">
         <Panel
           title={editingId ? "Edit capital movement" : "Record capital movement"}
         >
@@ -168,7 +168,7 @@ export default function CapitalPage() {
           </form>
         </Panel>
 
-        <div className="lg:col-span-3">
+        <div className="md:col-span-3">
           <Panel title="Capital ledger">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">

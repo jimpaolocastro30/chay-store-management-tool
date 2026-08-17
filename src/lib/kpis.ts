@@ -13,7 +13,7 @@ import {
 type TxLean = Pick<ITransaction, "type" | "amount" | "category" | "date">;
 type InvLean = Pick<
   IInventoryItem,
-  "_id" | "name" | "sku" | "quantity" | "reorderLevel" | "unitCost"
+  "_id" | "name" | "sku" | "quantity" | "sold" | "reorderLevel" | "unitCost"
 >;
 type CapLean = Pick<ICapitalEntry, "type" | "amount">;
 type AlertLean = IAlert;
@@ -56,6 +56,7 @@ export async function getDashboardData() {
     0
   );
   const lowStock = inventory.filter((i) => i.quantity <= i.reorderLevel);
+  const unitsSold = inventory.reduce((acc, item) => acc + (item.sold || 0), 0);
 
   const invested = capital
     .filter((c) => c.type === "initial" || c.type === "investment")
@@ -85,6 +86,7 @@ export async function getDashboardData() {
     netMargin,
     inventoryValue,
     inventoryCount: inventory.length,
+    unitsSold,
     lowStockCount: lowStock.length,
     inventoryTurnover,
     totalCapital,

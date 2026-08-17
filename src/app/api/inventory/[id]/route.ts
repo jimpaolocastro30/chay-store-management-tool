@@ -11,6 +11,7 @@ const ownerSchema = z.object({
   name: z.string().min(2).optional(),
   category: z.string().min(2).optional(),
   quantity: z.number().min(0).optional(),
+  sold: z.number().min(0).optional(),
   reorderLevel: z.number().min(0).optional(),
   unitCost: z.number().min(0).optional(),
   sellingPrice: z.number().min(0).optional(),
@@ -20,7 +21,8 @@ const ownerSchema = z.object({
 });
 
 const qtySchema = z.object({
-  quantity: z.number().min(0),
+  quantity: z.number().min(0).optional(),
+  sold: z.number().min(0).optional(),
 });
 
 export async function PATCH(

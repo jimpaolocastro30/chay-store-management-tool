@@ -116,7 +116,7 @@ export default function ExpensesPage() {
       title="Expenses & Losses"
       subtitle="Categorize operating costs, COGS, and inventory losses"
     >
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-5">
         <Panel title={editingId ? "Edit entry" : "New entry"}>
           <form onSubmit={onSubmit} className="space-y-3">
             <Select
@@ -179,7 +179,7 @@ export default function ExpensesPage() {
           </form>
         </Panel>
 
-        <div className="lg:col-span-3">
+        <div className="md:col-span-3">
           <Panel title="Expense & loss ledger">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">

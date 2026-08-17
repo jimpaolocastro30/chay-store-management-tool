@@ -81,7 +81,7 @@ export function Button({
 
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]} ${className}`}
       {...props}
     >
       {children}
@@ -98,7 +98,7 @@ export function Input(
       {label ? <span className="text-slate-600">{label}</span> : null}
       <input
         id={id}
-        className={`w-full rounded-xl border border-violet-900/15 bg-white px-3 py-2.5 text-violet-950 outline-none ring-violet-700/30 transition focus:ring-2 ${className}`}
+        className={`min-h-11 w-full rounded-xl border border-violet-900/15 bg-white px-3 py-2.5 text-base text-violet-950 outline-none ring-violet-700/30 transition focus:ring-2 md:text-sm ${className}`}
         {...rest}
       />
     </label>
@@ -113,7 +113,7 @@ export function Select(
     <label className="block space-y-1.5 text-sm">
       {label ? <span className="text-slate-600">{label}</span> : null}
       <select
-        className={`w-full rounded-xl border border-violet-900/15 bg-white px-3 py-2.5 text-violet-950 outline-none ring-violet-700/30 transition focus:ring-2 ${className}`}
+        className={`min-h-11 w-full rounded-xl border border-violet-900/15 bg-white px-3 py-2.5 text-base text-violet-950 outline-none ring-violet-700/30 transition focus:ring-2 md:text-sm ${className}`}
         {...rest}
       >
         {children}

@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
             name,
             category: String(row.category || row.Category || "General"),
             quantity: Number(row.quantity || row.Quantity || 0),
+            sold: Number(row.sold || row.Sold || 0),
             reorderLevel: Number(row.reorderLevel || row.ReorderLevel || 5),
             unitCost: Number(row.unitCost || row.UnitCost || 0),
             sellingPrice: Number(row.sellingPrice || row.SellingPrice || 0),

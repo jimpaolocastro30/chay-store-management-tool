@@ -24,7 +24,7 @@ export function AppShellView({
           subtitle={subtitle}
           onMenu={() => setOpen(true)}
         />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-5 md:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

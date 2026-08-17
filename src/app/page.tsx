@@ -149,14 +149,14 @@ export default function DashboardPage() {
       ) : null}
 
       <Panel title="Quick actions">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visibleShortcuts.map((item) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 rounded-2xl border border-violet-900/10 bg-white px-4 py-3 transition hover:border-violet-700/40 hover:bg-violet-50/70"
+                className="flex min-h-[4.5rem] items-center gap-3 rounded-2xl border border-violet-900/10 bg-white px-4 py-3 transition hover:border-violet-700/40 hover:bg-violet-50/70"
               >
                 <span className="rounded-xl bg-violet-100 p-2 text-violet-800">
                   <Icon size={18} />
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         </div>
       </Panel>
 
-      <div className="stagger mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="stagger mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <StatCard
           href="/revenue"
           label="Revenue MTD"
@@ -203,7 +203,7 @@ export default function DashboardPage() {
           href="/inventory"
           label="Inventory Value"
           value={formatPHP(k?.inventoryValue || 0)}
-          hint={`${k?.inventoryCount || 0} active SKUs · Manage stock`}
+          hint={`${k?.inventoryCount || 0} SKUs · ${k?.unitsSold || 0} sold`}
         />
         <StatCard
           href="/inventory"
@@ -226,8 +226,8 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-5">
-        <div className="xl:col-span-3">
+      <div className="mt-6 grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3">
           <Panel
             title="Revenue vs Expenses (6 months)"
             action={
@@ -244,7 +244,7 @@ export default function DashboardPage() {
             <TrendChart data={data?.trend || []} />
           </Panel>
         </div>
-        <div className="xl:col-span-2">
+        <div className="lg:col-span-2">
           <Panel
             title="Expense Breakdown (MTD)"
             action={
