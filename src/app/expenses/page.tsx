@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useSession } from "next-auth/react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
 import { formatDatePH, formatPHP, todayInputDate, toInputDate } from "@/lib/utils";
+import { useMountQuery } from "@/hooks/useMountQuery";
 
 interface Tx {
   _id: string;
@@ -43,21 +44,21 @@ export default function ExpensesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
 
-  async function load() {
+  async function fetchItems() {
     const [expenses, losses] = await Promise.all([
       fetch("/api/transactions?type=expense").then((r) => r.json()),
       fetch("/api/transactions?type=loss").then((r) => r.json()),
     ]);
-    setItems(
-      [...expenses, ...losses].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      )
-    );
+    return [...expenses, ...losses].sort(
+      (a: Tx, b: Tx) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    ) as Tx[];
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  async function load() {
+    setItems(await fetchItems());
+  }
+
+  useMountQuery(fetchItems, setItems);
 
   function startEdit(item: Tx) {
     setEditingId(item._id);

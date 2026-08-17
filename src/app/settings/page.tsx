@@ -25,15 +25,6 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
-    if (!session?.user) return;
-    setProfile((current) => ({
-      name: current.name || session.user.name || "",
-      email: current.email || session.user.email || "",
-      role: current.role || session.user.role || "",
-    }));
-  }, [session]);
-
-  useEffect(() => {
     fetch("/api/profile")
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));

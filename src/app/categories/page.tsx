@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel } from "@/components/ui";
+import { useMountQuery } from "@/hooks/useMountQuery";
 
 interface CategoryItem {
   _id: string;
@@ -28,19 +29,27 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
+  async function fetchItems() {
     const res = await fetch("/api/categories");
-    if (!res.ok) return;
-    setItems(await res.json());
+    if (!res.ok) return [] as CategoryItem[];
+    return res.json() as Promise<CategoryItem[]>;
   }
+
+  async function load() {
+    setItems(await fetchItems());
+  }
+
+  useMountQuery(
+    fetchItems,
+    setItems,
+    status !== "loading" && isOwner
+  );
 
   useEffect(() => {
     if (status === "loading") return;
     if (!isOwner) {
       router.replace("/");
-      return;
     }
-    load();
   }, [status, isOwner, router]);
 
   function startEdit(item: CategoryItem) {

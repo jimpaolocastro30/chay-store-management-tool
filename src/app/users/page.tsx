@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel, Select } from "@/components/ui";
+import { useMountQuery } from "@/hooks/useMountQuery";
 
 interface UserItem {
   _id: string;
@@ -23,18 +24,27 @@ export default function UsersPage() {
     role: "staff",
   });
 
-  async function load() {
+  async function fetchUsers() {
     const res = await fetch("/api/users");
     if (!res.ok) {
-      setError("Only owners can manage users.");
-      return;
+      return { users: [] as UserItem[], error: "Only owners can manage users." };
     }
-    setUsers(await res.json());
+    return {
+      users: (await res.json()) as UserItem[],
+      error: "",
+    };
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  async function load() {
+    const result = await fetchUsers();
+    setUsers(result.users);
+    setError(result.error);
+  }
+
+  useMountQuery(fetchUsers, (result) => {
+    setUsers(result.users);
+    setError(result.error);
+  });
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

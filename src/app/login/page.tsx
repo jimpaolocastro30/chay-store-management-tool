@@ -37,7 +37,8 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.assign("/");
+    router.replace("/");
+    router.refresh();
   }
 
   async function seedDemo() {

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { PriceManagement } from "@/components/PriceManagement";
 import { Button, Input } from "@/components/ui";
+import { useMountQuery } from "@/hooks/useMountQuery";
 
 interface Item {
   _id: string;
@@ -24,22 +25,30 @@ export default function PricesPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [q, setQ] = useState("");
 
-  async function load(search = q) {
+  async function fetchItems(search = q) {
     const res = await fetch(
       `/api/inventory${search ? `?q=${encodeURIComponent(search)}` : ""}`
     );
-    if (res.ok) setItems(await res.json());
+    if (!res.ok) return [] as Item[];
+    return res.json() as Promise<Item[]>;
   }
+
+  async function load(search = q) {
+    setItems(await fetchItems(search));
+  }
+
+  useMountQuery(
+    () => fetchItems(),
+    setItems,
+    status !== "loading" && isOwner
+  );
 
   useEffect(() => {
     if (status === "loading") return;
     if (!isOwner) {
       router.replace("/");
-      return;
     }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, isOwner]);
+  }, [status, isOwner, router]);
 
   if (!isOwner) {
     return (

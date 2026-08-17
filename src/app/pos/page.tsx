@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button, Input, Panel, Select } from "@/components/ui";
 import { useProductCategories } from "@/hooks/useProductCategories";
+import { useMountQuery } from "@/hooks/useMountQuery";
 import { formatPHP } from "@/lib/utils";
 
 interface CatalogItem {
@@ -44,24 +45,31 @@ export default function PosPage() {
     paymentMethod: string;
   } | null>(null);
 
-  async function load(search = q) {
+  async function fetchCatalog(search = q) {
     const res = await fetch(
       `/api/inventory${search ? `?q=${encodeURIComponent(search)}` : ""}`
     );
-    if (!res.ok) return;
+    if (!res.ok) return [] as CatalogItem[];
     const items: CatalogItem[] = await res.json();
-    setCatalog(items.filter((item) => item.sellingPrice > 0));
+    return items.filter((item) => item.sellingPrice > 0);
   }
+
+  async function load(search = q) {
+    setCatalog(await fetchCatalog(search));
+  }
+
+  useMountQuery(
+    () => fetchCatalog(),
+    setCatalog,
+    status !== "loading" && isOwner
+  );
 
   useEffect(() => {
     if (status === "loading") return;
     if (!isOwner) {
       router.replace("/");
-      return;
     }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, isOwner]);
+  }, [status, isOwner, router]);
 
   const total = useMemo(
     () => cart.reduce((sum, line) => sum + line.item.sellingPrice * line.quantity, 0),

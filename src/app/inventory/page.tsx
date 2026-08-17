@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button, Input, Panel, Select } from "@/components/ui";
 import { useProductCategories } from "@/hooks/useProductCategories";
+import { resolveCategory, useMountQuery } from "@/hooks/useMountQuery";
 import { formatPHP } from "@/lib/utils";
 
 interface Item {
@@ -47,27 +48,19 @@ export default function InventoryPage() {
   const [importing, setImporting] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
 
-  async function load(search = q) {
+  async function fetchItems(search = q) {
     const res = await fetch(
       `/api/inventory${search ? `?q=${encodeURIComponent(search)}` : ""}`
     );
     const data = await res.json();
-    setItems(Array.isArray(data) ? data : []);
+    return Array.isArray(data) ? (data as Item[]) : [];
   }
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  async function load(search = q) {
+    setItems(await fetchItems(search));
+  }
 
-  useEffect(() => {
-    if (editingId || !managedCategories.length) return;
-    setForm((current) =>
-      managedCategories.includes(current.category)
-        ? current
-        : { ...current, category: managedCategories[0] }
-    );
-  }, [managedCategories, editingId]);
+  useMountQuery(() => fetchItems(), setItems);
 
   function startEdit(item: Item) {
     setEditingId(item._id);
@@ -97,7 +90,7 @@ export default function InventoryPage() {
     const payload = {
       sku: form.sku,
       name: form.name,
-      category: form.category,
+      category: resolveCategory(form.category, managedCategories, Boolean(editingId)),
       quantity: Number(form.quantity),
       sold: Number(form.sold || 0),
       reorderLevel: Number(form.reorderLevel),
@@ -160,12 +153,18 @@ export default function InventoryPage() {
     [items, category]
   );
 
+  const formCategory = resolveCategory(
+    form.category,
+    managedCategories,
+    Boolean(editingId)
+  );
+
   const formCategories = useMemo(() => {
-    if (form.category && !categoryOptions.includes(form.category)) {
-      return [...categoryOptions, form.category];
+    if (formCategory && !categoryOptions.includes(formCategory)) {
+      return [...categoryOptions, formCategory];
     }
     return categoryOptions;
-  }, [categoryOptions, form.category]);
+  }, [categoryOptions, formCategory]);
 
   const totalSold = visibleItems.reduce((sum, item) => sum + (item.sold || 0), 0);
   const totalOnHand = visibleItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -198,7 +197,7 @@ export default function InventoryPage() {
         <Select
           label="Category"
           required
-          value={form.category}
+          value={formCategory}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
         >
           {formCategories.map((option) => (

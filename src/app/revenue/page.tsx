@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
 import { useProductCategories } from "@/hooks/useProductCategories";
+import { resolveCategory, useMountQuery } from "@/hooks/useMountQuery";
 import { formatDatePH, formatPHP, todayInputDate, toInputDate } from "@/lib/utils";
 
 interface Tx {
@@ -38,23 +39,16 @@ export default function RevenuePage() {
   const [category, setCategory] = useState("");
   const [form, setForm] = useState(emptyForm);
 
-  async function load() {
+  async function fetchItems() {
     const res = await fetch("/api/transactions?type=revenue");
-    setItems(await res.json());
+    return res.json() as Promise<Tx[]>;
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  async function load() {
+    setItems(await fetchItems());
+  }
 
-  useEffect(() => {
-    if (editingId || !managedCategories.length) return;
-    setForm((current) =>
-      managedCategories.includes(current.category)
-        ? current
-        : { ...current, category: managedCategories[0] }
-    );
-  }, [managedCategories, editingId]);
+  useMountQuery(fetchItems, setItems);
 
   function startEdit(item: Tx) {
     setEditingId(item._id);
@@ -79,7 +73,7 @@ export default function RevenuePage() {
     const payload = {
       type: "revenue",
       amount: Number(form.amount),
-      category: form.category,
+      category: resolveCategory(form.category, managedCategories, Boolean(editingId)),
       description: form.description,
       date: form.date,
       paymentMethod: form.paymentMethod,
@@ -126,12 +120,18 @@ export default function RevenuePage() {
     [items, category]
   );
 
+  const formCategory = resolveCategory(
+    form.category,
+    managedCategories,
+    Boolean(editingId)
+  );
+
   const formCategories = useMemo(() => {
-    if (form.category && !categoryOptions.includes(form.category)) {
-      return [...categoryOptions, form.category];
+    if (formCategory && !categoryOptions.includes(formCategory)) {
+      return [...categoryOptions, formCategory];
     }
     return categoryOptions;
-  }, [categoryOptions, form.category]);
+  }, [categoryOptions, formCategory]);
 
   const total = visibleItems.reduce((a, i) => a + i.amount, 0);
 
@@ -177,7 +177,7 @@ export default function RevenuePage() {
             <Select
               label="Category"
               required
-              value={form.category}
+              value={formCategory}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
             >
               {formCategories.map((option) => (

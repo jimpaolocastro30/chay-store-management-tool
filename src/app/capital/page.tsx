@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Input, Panel, Select, TextArea } from "@/components/ui";
 import { formatDatePH, formatPHP, todayInputDate, toInputDate } from "@/lib/utils";
+import { useMountQuery } from "@/hooks/useMountQuery";
 
 interface Entry {
   _id: string;
@@ -26,14 +27,17 @@ export default function CapitalPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
 
-  async function load() {
+  async function fetchItems() {
     const res = await fetch("/api/capital");
-    if (res.ok) setItems(await res.json());
+    if (!res.ok) return [] as Entry[];
+    return res.json() as Promise<Entry[]>;
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  async function load() {
+    setItems(await fetchItems());
+  }
+
+  useMountQuery(fetchItems, setItems);
 
   function startEdit(item: Entry) {
     setEditingId(item._id);

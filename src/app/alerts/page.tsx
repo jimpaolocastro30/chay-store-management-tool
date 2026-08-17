@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Panel } from "@/components/ui";
 import { formatDateTimePH } from "@/lib/utils";
+import { useMountQuery } from "@/hooks/useMountQuery";
 
 interface AlertItem {
   _id: string;
@@ -18,14 +19,17 @@ interface AlertItem {
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
-  async function load() {
+  async function fetchAlerts() {
     const res = await fetch("/api/alerts");
-    setAlerts(await res.json());
+    const data = await res.json();
+    return Array.isArray(data) ? (data as AlertItem[]) : [];
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  async function load() {
+    setAlerts(await fetchAlerts());
+  }
+
+  useMountQuery(fetchAlerts, setAlerts);
 
   async function markRead(id: string) {
     await fetch("/api/alerts", {
