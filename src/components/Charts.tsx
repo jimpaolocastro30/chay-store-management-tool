@@ -37,7 +37,7 @@ export function TrendChart({ data }: { data: ChartPoint[] }) {
           <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 12 }} />
           <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
           <Tooltip
-            formatter={(value: number) => formatPHP(value)}
+            formatter={(value) => formatPHP(Number(value ?? 0))}
             contentStyle={{
               borderRadius: 12,
               border: "1px solid #ddd6fe",
@@ -92,7 +92,7 @@ export function ExpensePie({ data }: { data: ExpenseBreakdown[] }) {
               />
             ))}
           </Pie>
-          <Tooltip formatter={(value: number) => formatPHP(value)} />
+          <Tooltip formatter={(value) => formatPHP(Number(value ?? 0))} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

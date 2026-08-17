@@ -39,10 +39,10 @@ export async function PATCH(
     const body = isOwner ? ownerSchema.parse(json) : qtySchema.parse(json);
     await connectDB();
 
-    const update = {
-      ...body,
-      ...("sku" in body && body.sku ? { sku: body.sku.toUpperCase() } : {}),
-    };
+    const update: Record<string, unknown> = { ...body };
+    if ("sku" in body && typeof body.sku === "string") {
+      update.sku = body.sku.toUpperCase();
+    }
 
     const item = await InventoryItem.findByIdAndUpdate(id, update, {
       new: true,
