@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -33,28 +32,12 @@ export default function LoginPage() {
 
     if (res?.error || !res?.ok) {
       setLoading(false);
-      setError("Invalid email or password. Seed demo data if this is a fresh setup.");
+      setError("Invalid email or password.");
       return;
     }
 
     router.replace("/");
     router.refresh();
-  }
-
-  async function seedDemo() {
-    setSeeding(true);
-    setError("");
-    try {
-      const res = await fetch("/api/seed", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Seed failed");
-      setEmail("owner@chay.ph");
-      setPassword("password123");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Seed failed");
-    } finally {
-      setSeeding(false);
-    }
   }
 
   return (
@@ -113,22 +96,7 @@ export default function LoginPage() {
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Signing in…" : "Enter dashboard"}
             </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={seeding}
-              onClick={seedDemo}
-              className="w-full"
-            >
-              {seeding ? "Loading demo…" : "Load demo data"}
-            </Button>
           </div>
-
-          <p className="mt-4 text-xs leading-relaxed text-slate-500">
-            Use the email and password for your account. After loading demo
-            data, the defaults are owner@chay.ph, manager@chay.ph, and
-            staff@chay.ph with password123.
-          </p>
         </form>
       </div>
     </div>

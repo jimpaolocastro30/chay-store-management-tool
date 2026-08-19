@@ -143,8 +143,7 @@ export default function DashboardPage() {
     >
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
-          {error}. Open Login and click &quot;Load demo data&quot; if MongoDB is
-          empty.
+          {error}. Check your connection and that the database is available.
         </div>
       ) : null}
 
