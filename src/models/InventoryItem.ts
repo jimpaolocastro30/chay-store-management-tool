@@ -55,8 +55,7 @@ function getInventoryModel() {
   // Next.js keeps the first compiled model in memory. If specialPrice is
   // missing from that cached schema, updates are silently ignored.
   if (cached && !cached.schema.path("specialPrice")) {
-    delete mongoose.models.InventoryItem;
-    delete mongoose.connection.models.InventoryItem;
+    mongoose.deleteModel("InventoryItem");
   }
 
   return (

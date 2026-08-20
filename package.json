@@ -9,6 +9,10 @@
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts"
   },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "lucide-react": "^0.511.0",

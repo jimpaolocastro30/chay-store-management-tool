@@ -50,8 +50,7 @@ function getTransactionModel() {
     | undefined;
 
   if (cached && !cached.schema.path("source")) {
-    delete mongoose.models.Transaction;
-    delete mongoose.connection.models.Transaction;
+    mongoose.deleteModel("Transaction");
   }
 
   return (
