@@ -52,7 +52,7 @@ export default function LoginPage() {
             Chay
           </h1>
           <p className="mt-2 text-lg text-violet-100/90">
-            Business Intelligence & Operations Platform — revenue, inventory,
+            Business Intelligence & Operations Platform — sales, inventory,
             capital, and KPIs in one mobile-friendly workspace.
           </p>
         </div>

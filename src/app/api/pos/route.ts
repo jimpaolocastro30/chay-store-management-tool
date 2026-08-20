@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { InventoryItem } from "@/models/InventoryItem";
 import { Transaction } from "@/models/Transaction";
 import { requireSession } from "@/lib/api";
+import { hasSpecialPrice, unitPriceForSale } from "@/lib/utils";
 
 const schema = z.object({
   paymentMethod: z.enum(["cash", "gcash", "maya", "card", "bank"]),
@@ -13,6 +14,7 @@ const schema = z.object({
       z.object({
         itemId: z.string().min(1),
         quantity: z.number().int().positive(),
+        useSpecial: z.boolean().optional(),
       })
     )
     .min(1),
@@ -32,6 +34,7 @@ export async function POST(req: NextRequest) {
       quantity: number;
       unitPrice: number;
       lineTotal: number;
+      usedSpecial: boolean;
     }> = [];
     const pending: Array<{
       item: InstanceType<typeof InventoryItem>;
@@ -57,6 +60,12 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      if (line.useSpecial && !hasSpecialPrice(item.specialPrice)) {
+        return NextResponse.json(
+          { error: `${item.sku} has no special price set.` },
+          { status: 400 }
+        );
+      }
       if (item.quantity < line.quantity) {
         return NextResponse.json(
           {
@@ -66,16 +75,24 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const useSpecial = Boolean(line.useSpecial);
+      const unitPrice = unitPriceForSale(
+        item.sellingPrice,
+        item.specialPrice,
+        useSpecial
+      );
+
       pending.push({ item, quantity: line.quantity });
-      const lineTotal = item.sellingPrice * line.quantity;
+      const lineTotal = unitPrice * line.quantity;
       revenue += lineTotal;
       cogs += item.unitCost * line.quantity;
       sold.push({
         sku: item.sku,
         name: item.name,
         quantity: line.quantity,
-        unitPrice: item.sellingPrice,
+        unitPrice,
         lineTotal,
+        usedSpecial: useSpecial,
       });
     }
 
@@ -86,7 +103,10 @@ export async function POST(req: NextRequest) {
     }
 
     const summary = sold
-      .map((row) => `${row.sku} x${row.quantity}`)
+      .map(
+        (row) =>
+          `${row.sku} x${row.quantity}${row.usedSpecial ? " (special)" : ""}`
+      )
       .join(", ");
 
     const categories = [
@@ -103,6 +123,7 @@ export async function POST(req: NextRequest) {
       date: new Date(),
       paymentMethod: body.paymentMethod,
       reference: body.reference || undefined,
+      source: "pos",
       createdBy: session.user.id,
     });
 
@@ -113,6 +134,7 @@ export async function POST(req: NextRequest) {
         amount: Math.round(cogs * 100) / 100,
         description: `POS COGS: ${summary}`,
         date: new Date(),
+        source: "pos",
         createdBy: session.user.id,
       });
     }

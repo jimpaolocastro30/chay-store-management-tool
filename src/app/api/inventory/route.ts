@@ -13,6 +13,7 @@ const schema = z.object({
   reorderLevel: z.number().min(0),
   unitCost: z.number().min(0),
   sellingPrice: z.number().min(0),
+  specialPrice: z.number().min(0).optional(),
   location: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
       ...body,
       sku: body.sku.toUpperCase(),
       sold: body.sold ?? 0,
+      specialPrice: body.specialPrice ?? 0,
     });
     return NextResponse.json(item, { status: 201 });
   } catch (err) {

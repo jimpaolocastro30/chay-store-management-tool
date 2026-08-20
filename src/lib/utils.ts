@@ -100,6 +100,21 @@ export function formatPercent(value: number) {
   return `${(value || 0).toFixed(1)}%`;
 }
 
+export function hasSpecialPrice(specialPrice?: number | null) {
+  return typeof specialPrice === "number" && specialPrice > 0;
+}
+
+export function unitPriceForSale(
+  sellingPrice: number,
+  specialPrice?: number | null,
+  useSpecial = false
+) {
+  if (useSpecial && hasSpecialPrice(specialPrice)) {
+    return Number(specialPrice);
+  }
+  return sellingPrice;
+}
+
 export function markupPercent(cost: number, sell: number) {
   if (!cost) return 0;
   return ((sell - cost) / cost) * 100;

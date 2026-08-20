@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { Button, Input, Panel, Select, StatCard } from "@/components/ui";
-import { formatPHP, formatPercent, marginPercent, markupPercent } from "@/lib/utils";
+import {
+  formatPHP,
+  formatPercent,
+  hasSpecialPrice,
+  marginPercent,
+  markupPercent,
+} from "@/lib/utils";
 
 interface Item {
   _id: string;
@@ -12,6 +18,7 @@ interface Item {
   quantity: number;
   unitCost: number;
   sellingPrice: number;
+  specialPrice?: number;
 }
 
 export function PriceManagement({
@@ -26,7 +33,10 @@ export function PriceManagement({
   onSaved: () => Promise<void>;
 }) {
   const [drafts, setDrafts] = useState<
-    Record<string, { unitCost: string; sellingPrice: string }>
+    Record<
+      string,
+      { unitCost: string; sellingPrice: string; specialPrice: string }
+    >
   >({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [percent, setPercent] = useState("10");
@@ -45,13 +55,16 @@ export function PriceManagement({
     const belowCost = items.filter(
       (item) => item.sellingPrice > 0 && item.sellingPrice < item.unitCost
     ).length;
+    const withSpecial = items.filter((item) =>
+      hasSpecialPrice(item.specialPrice)
+    ).length;
     const markups = items
       .filter((item) => item.unitCost > 0)
       .map((item) => markupPercent(item.unitCost, item.sellingPrice));
     const avgMarkup = markups.length
       ? markups.reduce((a, b) => a + b, 0) / markups.length
       : 0;
-    return { retail, cost, belowCost, avgMarkup };
+    return { retail, cost, belowCost, avgMarkup, withSpecial };
   }, [items]);
 
   function draftFor(item: Item) {
@@ -59,6 +72,7 @@ export function PriceManagement({
       drafts[item._id] || {
         unitCost: String(item.unitCost),
         sellingPrice: String(item.sellingPrice),
+        specialPrice: String(item.specialPrice || 0),
       }
     );
   }
@@ -66,15 +80,21 @@ export function PriceManagement({
   async function saveRow(item: Item) {
     const draft = draftFor(item);
     setSavingId(item._id);
-    await fetch(`/api/inventory/${item._id}`, {
+    const res = await fetch(`/api/inventory/${item._id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         unitCost: Number(draft.unitCost),
         sellingPrice: Number(draft.sellingPrice),
+        specialPrice: Number(draft.specialPrice || 0),
       }),
     });
     setSavingId(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Could not save price");
+      return;
+    }
     setDrafts((current) => {
       const next = { ...current };
       delete next[item._id];
@@ -128,10 +148,10 @@ export function PriceManagement({
           hint="(Sell − cost) ÷ cost"
         />
         <StatCard
-          label="Below cost"
-          value={String(stats.belowCost)}
-          hint="Selling price under unit cost"
-          tone={stats.belowCost ? "warn" : "good"}
+          label="Special prices"
+          value={String(stats.withSpecial)}
+          hint="SKUs with promo price set"
+          tone={stats.withSpecial ? "warn" : "default"}
         />
       </div>
 
@@ -166,7 +186,8 @@ export function PriceManagement({
               </Button>
             </div>
             <p className="self-end text-xs text-slate-500 md:pb-3">
-              Uses the current search filter. Example: 10 raises ₱100 to ₱110.
+              Special prices are edited per item below. Example: 10 raises ₱100
+              to ₱110.
             </p>
           </div>
         </Panel>
@@ -180,6 +201,7 @@ export function PriceManagement({
                 <th className="py-2 pr-3 font-medium">Item</th>
                 <th className="py-2 pr-3 font-medium">Unit cost</th>
                 <th className="py-2 pr-3 font-medium">Selling price</th>
+                <th className="py-2 pr-3 font-medium">Special price</th>
                 <th className="py-2 pr-3 font-medium">Markup</th>
                 <th className="py-2 pr-3 font-medium">Margin</th>
                 <th className="py-2 font-medium">Profit / unit</th>
@@ -193,7 +215,9 @@ export function PriceManagement({
                 const draft = draftFor(item);
                 const cost = Number(draft.unitCost);
                 const sell = Number(draft.sellingPrice);
+                const special = Number(draft.specialPrice || 0);
                 const below = sell > 0 && sell < cost;
+                const specialBelow = special > 0 && special < cost;
                 return (
                   <tr key={item._id} className="border-b border-violet-900/5">
                     <td className="py-3 pr-3">
@@ -251,6 +275,39 @@ export function PriceManagement({
                           {formatPHP(item.sellingPrice)}
                         </span>
                       )}
+                    </td>
+                    <td className="py-3 pr-3">
+                      {isOwner ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className={`w-28 rounded-lg border px-2 py-1.5 ${
+                            specialBelow
+                              ? "border-amber-400 bg-amber-50"
+                              : "border-violet-900/15"
+                          }`}
+                          value={draft.specialPrice}
+                          onChange={(e) =>
+                            setDrafts((current) => ({
+                              ...current,
+                              [item._id]: {
+                                ...draft,
+                                specialPrice: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                      ) : hasSpecialPrice(item.specialPrice) ? (
+                        formatPHP(item.specialPrice || 0)
+                      ) : (
+                        "—"
+                      )}
+                      {isOwner ? (
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          0 = no special
+                        </p>
+                      ) : null}
                     </td>
                     <td className="py-3 pr-3">
                       {formatPercent(markupPercent(cost, sell))}

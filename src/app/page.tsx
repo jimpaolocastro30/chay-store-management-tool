@@ -55,9 +55,9 @@ const shortcuts = [
     permission: "usePos" as const,
   },
   {
-    href: "/revenue",
-    label: "Record revenue",
-    hint: "Daily collections",
+    href: "/sales",
+    label: "View sales",
+    hint: "POS sales report",
     icon: TrendingUp,
   },
   {
@@ -172,10 +172,10 @@ export default function DashboardPage() {
 
       <div className="stagger mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <StatCard
-          href="/revenue"
-          label="Revenue MTD"
+          href="/sales"
+          label="Sales MTD"
           value={formatPHP(k?.revenueMtd || 0)}
-          hint={`YTD ${formatPHP(k?.revenueYtd || 0)} · Record sales`}
+          hint={`YTD ${formatPHP(k?.revenueYtd || 0)} · POS sales`}
           tone="good"
         />
         <StatCard
@@ -192,7 +192,7 @@ export default function DashboardPage() {
           hint={`Expense ratio ${formatPercent(k?.expenseRatio || 0)} · Log costs`}
         />
         <StatCard
-          href={can(role, "manageCapital") ? "/capital" : "/revenue"}
+          href={can(role, "manageCapital") ? "/capital" : "/sales"}
           label="Cash Position"
           value={formatPHP(k?.cashPosition || 0)}
           hint={`Working capital ${formatPHP(k?.workingCapital || 0)}`}
@@ -228,11 +228,11 @@ export default function DashboardPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <Panel
-            title="Revenue vs Expenses (6 months)"
+            title="Sales vs Expenses (6 months)"
             action={
               <div className="flex gap-3 text-sm">
-                <Link href="/revenue" className="text-violet-800 hover:underline">
-                  Revenue
+                <Link href="/sales" className="text-violet-800 hover:underline">
+                  Sales
                 </Link>
                 <Link href="/expenses" className="text-violet-800 hover:underline">
                   Expenses

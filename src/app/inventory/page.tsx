@@ -20,6 +20,7 @@ interface Item {
   reorderLevel: number;
   unitCost: number;
   sellingPrice: number;
+  specialPrice?: number;
   location?: string;
 }
 
@@ -32,6 +33,7 @@ const empty = {
   reorderLevel: "5",
   unitCost: "",
   sellingPrice: "",
+  specialPrice: "0",
   location: "Main Store",
 };
 
@@ -74,6 +76,7 @@ export default function InventoryPage() {
       reorderLevel: String(item.reorderLevel),
       unitCost: String(item.unitCost),
       sellingPrice: String(item.sellingPrice),
+      specialPrice: String(item.specialPrice || 0),
       location: item.location || "Main Store",
     });
   }
@@ -96,6 +99,7 @@ export default function InventoryPage() {
       reorderLevel: Number(form.reorderLevel),
       unitCost: Number(form.unitCost),
       sellingPrice: Number(form.sellingPrice),
+      specialPrice: Number(form.specialPrice || 0),
       location: form.location,
     };
 
@@ -254,6 +258,14 @@ export default function InventoryPage() {
           />
         </div>
         <Input
+          label="Special price (0 = none)"
+          type="number"
+          min="0"
+          step="0.01"
+          value={form.specialPrice}
+          onChange={(e) => setForm({ ...form, specialPrice: e.target.value })}
+        />
+        <Input
           label="Location"
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
@@ -410,6 +422,9 @@ export default function InventoryPage() {
                         {formatPHP(item.quantity * item.unitCost)}
                         <span className="block text-[11px] text-slate-500">
                           sell {formatPHP(item.sellingPrice)}
+                          {(item.specialPrice || 0) > 0
+                            ? ` · special ${formatPHP(item.specialPrice || 0)}`
+                            : ""}
                         </span>
                       </p>
                     </div>
@@ -515,6 +530,9 @@ export default function InventoryPage() {
                           {formatPHP(item.quantity * item.unitCost)}
                           <p className="text-[11px] text-slate-500">
                             sell {formatPHP(item.sellingPrice)}
+                          {(item.specialPrice || 0) > 0
+                            ? ` · special ${formatPHP(item.specialPrice || 0)}`
+                            : ""}
                           </p>
                         </td>
                         <td className="py-3">

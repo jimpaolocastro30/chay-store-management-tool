@@ -101,6 +101,7 @@ export async function POST() {
         reorderLevel: 15,
         unitCost: 180,
         sellingPrice: 280,
+        specialPrice: 249,
       },
       {
         sku: "TEA-002",
@@ -111,6 +112,7 @@ export async function POST() {
         reorderLevel: 12,
         unitCost: 220,
         sellingPrice: 350,
+        specialPrice: 299,
       },
       {
         sku: "SNK-010",
@@ -121,6 +123,7 @@ export async function POST() {
         reorderLevel: 20,
         unitCost: 95,
         sellingPrice: 150,
+        specialPrice: 129,
       },
       {
         sku: "BEV-020",
@@ -131,6 +134,7 @@ export async function POST() {
         reorderLevel: 24,
         unitCost: 45,
         sellingPrice: 89,
+        specialPrice: 0,
       },
       {
         sku: "MER-030",
@@ -141,6 +145,7 @@ export async function POST() {
         reorderLevel: 10,
         unitCost: 120,
         sellingPrice: 249,
+        specialPrice: 199,
       },
       {
         sku: "SUP-040",
@@ -151,6 +156,7 @@ export async function POST() {
         reorderLevel: 10,
         unitCost: 160,
         sellingPrice: 0,
+        specialPrice: 0,
       },
     ]);
 

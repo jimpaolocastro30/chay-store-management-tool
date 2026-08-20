@@ -24,17 +24,32 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const category = searchParams.get("category");
+  const source = searchParams.get("source");
+  const paymentMethod = searchParams.get("paymentMethod");
 
   const filter: Record<string, unknown> = {};
   if (type) filter.type = type;
   if (category) filter.category = category;
+  if (paymentMethod) filter.paymentMethod = paymentMethod;
+  if (source === "pos") {
+    filter.$or = [
+      { source: "pos" },
+      { description: { $regex: /^POS sale:/i } },
+    ];
+  } else if (source) {
+    filter.source = source;
+  }
   if (from || to) {
     filter.date = {};
     if (from) (filter.date as Record<string, Date>).$gte = new Date(from);
-    if (to) (filter.date as Record<string, Date>).$lte = new Date(to);
+    if (to) {
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+      (filter.date as Record<string, Date>).$lte = end;
+    }
   }
 
-  const items = await Transaction.find(filter).sort({ date: -1 }).limit(200);
+  const items = await Transaction.find(filter).sort({ date: -1 }).limit(500);
   return NextResponse.json(items);
 }
 

@@ -47,6 +47,7 @@ export function TrendChart({ data }: { data: ChartPoint[] }) {
           <Area
             type="monotone"
             dataKey="revenue"
+            name="Sales"
             stroke="#7c3aed"
             fill="url(#rev)"
             strokeWidth={2}
@@ -54,6 +55,7 @@ export function TrendChart({ data }: { data: ChartPoint[] }) {
           <Area
             type="monotone"
             dataKey="expense"
+            name="Expenses"
             stroke="#e11d48"
             fill="url(#exp)"
             strokeWidth={2}

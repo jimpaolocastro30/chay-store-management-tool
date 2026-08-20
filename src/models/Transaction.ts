@@ -1,4 +1,4 @@
-import mongoose, { Schema, models, model } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 import { ExpenseCategory, TransactionType } from "@/types";
 
 export interface ITransaction {
@@ -10,6 +10,7 @@ export interface ITransaction {
   date: Date;
   paymentMethod?: string;
   reference?: string;
+  source?: "pos" | "manual";
   createdBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -29,12 +30,34 @@ const TransactionSchema = new Schema<ITransaction>(
     date: { type: Date, required: true, index: true },
     paymentMethod: { type: String, default: "cash" },
     reference: { type: String },
+    source: {
+      type: String,
+      enum: ["pos", "manual"],
+      default: "manual",
+      index: true,
+    },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
 
 TransactionSchema.index({ type: 1, date: -1 });
+TransactionSchema.index({ source: 1, type: 1, date: -1 });
 
-export const Transaction =
-  models.Transaction || model<ITransaction>("Transaction", TransactionSchema);
+function getTransactionModel() {
+  const cached = mongoose.models.Transaction as
+    | mongoose.Model<ITransaction>
+    | undefined;
+
+  if (cached && !cached.schema.path("source")) {
+    delete mongoose.models.Transaction;
+    delete mongoose.connection.models.Transaction;
+  }
+
+  return (
+    (mongoose.models.Transaction as mongoose.Model<ITransaction>) ||
+    model<ITransaction>("Transaction", TransactionSchema)
+  );
+}
+
+export const Transaction = getTransactionModel();

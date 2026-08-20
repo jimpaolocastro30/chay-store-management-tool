@@ -26,7 +26,7 @@ import { UserRole } from "@/types";
 const links = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pos", label: "POS", icon: ShoppingCart, permission: "usePos" as const },
-  { href: "/revenue", label: "Revenue", icon: TrendingUp },
+  { href: "/sales", label: "Sales", icon: TrendingUp },
   { href: "/expenses", label: "Expenses", icon: Receipt },
   { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/categories", label: "Categories", icon: Tags, permission: "editInventory" as const },

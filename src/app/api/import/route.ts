@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
             reorderLevel: Number(row.reorderLevel || row.ReorderLevel || 5),
             unitCost: Number(row.unitCost || row.UnitCost || 0),
             sellingPrice: Number(row.sellingPrice || row.SellingPrice || 0),
+            specialPrice: Number(row.specialPrice || row.SpecialPrice || 0),
             location: String(row.location || row.Location || "Main Store"),
             active: true,
           },

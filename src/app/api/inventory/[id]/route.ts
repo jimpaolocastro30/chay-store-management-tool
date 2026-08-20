@@ -15,6 +15,7 @@ const ownerSchema = z.object({
   reorderLevel: z.number().min(0).optional(),
   unitCost: z.number().min(0).optional(),
   sellingPrice: z.number().min(0).optional(),
+  specialPrice: z.number().min(0).optional(),
   location: z.string().optional(),
   notes: z.string().optional(),
   active: z.boolean().optional(),
@@ -44,10 +45,14 @@ export async function PATCH(
       update.sku = body.sku.toUpperCase();
     }
 
-    const item = await InventoryItem.findByIdAndUpdate(id, update, {
-      new: true,
-      runValidators: true,
-    });
+    const item = await InventoryItem.findByIdAndUpdate(
+      id,
+      { $set: update },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!item) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

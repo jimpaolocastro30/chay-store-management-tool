@@ -124,7 +124,7 @@ export default function CategoriesPage() {
   return (
     <AppShell
       title="Categories"
-      subtitle="Manage product categories used on POS, inventory, and revenue"
+      subtitle="Manage product categories used on POS, inventory, and sales"
     >
       <div className="grid gap-6 md:grid-cols-5">
         <Panel title={editingId ? "Edit category" : "Add category"}>

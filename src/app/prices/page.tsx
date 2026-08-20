@@ -16,6 +16,7 @@ interface Item {
   quantity: number;
   unitCost: number;
   sellingPrice: number;
+  specialPrice?: number;
 }
 
 export default function PricesPage() {
@@ -61,7 +62,7 @@ export default function PricesPage() {
   return (
     <AppShell
       title="Price management"
-      subtitle="Set unit cost, selling price, markup, and bulk adjustments"
+      subtitle="Set unit cost, selling price, special/promo price, and bulk adjustments"
     >
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
