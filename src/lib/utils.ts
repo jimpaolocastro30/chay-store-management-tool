@@ -135,7 +135,18 @@ export function startOfYear(date = new Date()) {
 
 export function toCsv(rows: Record<string, unknown>[]) {
   if (!rows.length) return "";
-  const headers = Object.keys(rows[0]);
+  const headers = Array.from(
+    rows.reduce((keys, row) => {
+      Object.keys(row).forEach((key) => keys.add(key));
+      return keys;
+    }, new Set<string>())
+  );
+  // Prefer dataset first for multi-table backups.
+  headers.sort((a, b) => {
+    if (a === "dataset") return -1;
+    if (b === "dataset") return 1;
+    return a.localeCompare(b);
+  });
   const lines = [
     headers.join(","),
     ...rows.map((row) =>
