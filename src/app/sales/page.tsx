@@ -15,6 +15,22 @@ import {
   todayInputDate,
 } from "@/lib/utils";
 
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "gcash", label: "GCash" },
+  { value: "maya", label: "Maya" },
+  { value: "card", label: "Card" },
+  { value: "bank", label: "Bank transfer" },
+] as const;
+
+function paymentLabel(value?: string) {
+  return (
+    PAYMENT_METHODS.find((method) => method.value === value)?.label ||
+    value ||
+    "—"
+  );
+}
+
 interface Sale {
   _id: string;
   amount: number;
@@ -35,6 +51,9 @@ export default function SalesPage() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const [editPaymentMethod, setEditPaymentMethod] = useState("cash");
+  const [savingPayment, setSavingPayment] = useState(false);
 
   async function fetchSales(params?: {
     from?: string;
@@ -69,7 +88,34 @@ export default function SalesPage() {
   async function remove(id: string) {
     if (!confirm("Delete this POS sale from the report?")) return;
     await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+    if (editingPaymentId === id) cancelPaymentEdit();
     await load();
+  }
+
+  function startPaymentEdit(item: Sale) {
+    setEditingPaymentId(item._id);
+    setEditPaymentMethod(item.paymentMethod || "cash");
+  }
+
+  function cancelPaymentEdit() {
+    setEditingPaymentId(null);
+    setEditPaymentMethod("cash");
+  }
+
+  async function savePayment(id: string) {
+    setSavingPayment(true);
+    try {
+      const res = await fetch(`/api/transactions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentMethod: editPaymentMethod }),
+      });
+      if (!res.ok) return;
+      cancelPaymentEdit();
+      await load();
+    } finally {
+      setSavingPayment(false);
+    }
   }
 
   const categoryOptions = useMemo(() => {
@@ -163,11 +209,11 @@ export default function SalesPage() {
           onChange={(e) => setPaymentMethod(e.target.value)}
         >
           <option value="">All methods</option>
-          <option value="cash">Cash</option>
-          <option value="gcash">GCash</option>
-          <option value="maya">Maya</option>
-          <option value="card">Card</option>
-          <option value="bank">Bank transfer</option>
+          {PAYMENT_METHODS.map((method) => (
+            <option key={method.value} value={method.value}>
+              {method.label}
+            </option>
+          ))}
         </Select>
         <div className="flex items-end gap-2">
           <Button type="button" onClick={load} className="w-full">
@@ -233,8 +279,24 @@ export default function SalesPage() {
                   <td className="py-3 pr-3">
                     {item.description.replace(/^POS sale:\s*/i, "")}
                   </td>
-                  <td className="py-3 pr-3 capitalize">
-                    {item.paymentMethod || "—"}
+                  <td className="py-3 pr-3">
+                    {editingPaymentId === item._id ? (
+                      <Select
+                        value={editPaymentMethod}
+                        onChange={(e) => setEditPaymentMethod(e.target.value)}
+                        className="min-w-[9rem]"
+                      >
+                        {PAYMENT_METHODS.map((method) => (
+                          <option key={method.value} value={method.value}>
+                            {method.label}
+                          </option>
+                        ))}
+                      </Select>
+                    ) : (
+                      <span className="capitalize">
+                        {paymentLabel(item.paymentMethod)}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 pr-3 text-slate-500">
                     {item.reference || "—"}
@@ -244,14 +306,48 @@ export default function SalesPage() {
                   </td>
                   {isOwner ? (
                     <td className="py-3 pl-3">
-                      <Button
-                        type="button"
-                        variant="danger"
-                        className="px-3 py-1.5 text-xs"
-                        onClick={() => remove(item._id)}
-                      >
-                        Delete
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        {editingPaymentId === item._id ? (
+                          <>
+                            <Button
+                              type="button"
+                              className="px-3 py-1.5 text-xs"
+                              disabled={savingPayment}
+                              onClick={() => savePayment(item._id)}
+                            >
+                              {savingPayment ? "Saving…" : "Save"}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="px-3 py-1.5 text-xs"
+                              disabled={savingPayment}
+                              onClick={cancelPaymentEdit}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => startPaymentEdit(item)}
+                            >
+                              Edit payment
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="danger"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => remove(item._id)}
+                            >
+                              Delete
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   ) : null}
                 </tr>
