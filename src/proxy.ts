@@ -53,6 +53,7 @@ export const config = {
     "/prices/:path*",
     "/pos/:path*",
     "/capital/:path*",
+    "/utang/:path*",
     "/reports/:path*",
     "/users/:path*",
     "/alerts/:path*",

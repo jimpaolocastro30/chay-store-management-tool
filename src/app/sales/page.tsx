@@ -21,14 +21,26 @@ const PAYMENT_METHODS = [
   { value: "maya", label: "Maya" },
   { value: "card", label: "Card" },
   { value: "bank", label: "Bank transfer" },
+  { value: "utang", label: "Utang (credit)" },
 ] as const;
 
 function paymentLabel(value?: string) {
+  if (value === "utang") return "Utang (credit)";
   return (
     PAYMENT_METHODS.find((method) => method.value === value)?.label ||
     value ||
     "—"
   );
+}
+
+interface SaleUtang {
+  _id: string;
+  saleId: string;
+  loanerName: string;
+  balance: number;
+  committedPayment: number;
+  status: string;
+  dueDate: string;
 }
 
 interface Sale {
@@ -47,6 +59,7 @@ export default function SalesPage() {
   const isOwner = session?.user?.role === "owner";
   const managedCategories = useProductCategories();
   const [items, setItems] = useState<Sale[]>([]);
+  const [utangBySale, setUtangBySale] = useState<Record<string, SaleUtang>>({});
   const [category, setCategory] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [from, setFrom] = useState("");
@@ -73,17 +86,42 @@ export default function SalesPage() {
     return Array.isArray(data) ? (data as Sale[]) : [];
   }
 
+  async function fetchUtangMap() {
+    const res = await fetch("/api/utang");
+    if (!res.ok) return {} as Record<string, SaleUtang>;
+    const rows = (await res.json()) as SaleUtang[];
+    return rows.reduce<Record<string, SaleUtang>>((map, row) => {
+      if (row.saleId) map[row.saleId] = row;
+      return map;
+    }, {});
+  }
+
   async function load() {
-    setItems(
-      await fetchSales({
+    const [sales, utangMap] = await Promise.all([
+      fetchSales({
         from: from || undefined,
         to: to || undefined,
         paymentMethod: paymentMethod || undefined,
-      })
-    );
+      }),
+      fetchUtangMap(),
+    ]);
+    setItems(sales);
+    setUtangBySale(utangMap);
   }
 
-  useMountQuery(() => fetchSales(), setItems);
+  useMountQuery(
+    async () => {
+      const [sales, utangMap] = await Promise.all([
+        fetchSales(),
+        fetchUtangMap(),
+      ]);
+      return { sales, utangMap };
+    },
+    ({ sales, utangMap }) => {
+      setItems(sales);
+      setUtangBySale(utangMap);
+    }
+  );
 
   async function remove(id: string) {
     if (!confirm("Delete this POS sale from the report?")) return;
@@ -153,12 +191,22 @@ export default function SalesPage() {
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [visibleItems]);
 
+  const linkedUtang = useMemo(
+    () =>
+      visibleItems
+        .map((sale) => utangBySale[sale._id])
+        .filter((row): row is SaleUtang => Boolean(row)),
+    [visibleItems, utangBySale]
+  );
+  const utangOutstanding = linkedUtang.reduce((sum, row) => sum + row.balance, 0);
+  const utangOverdue = linkedUtang.filter((row) => row.status === "overdue").length;
+
   return (
     <AppShell
       title="Sales"
-      subtitle="POS sales report — every completed checkout from Point of Sale"
+      subtitle="POS sales report with utang monitoring"
     >
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label="Sales total"
           value={formatPHP(total)}
@@ -174,7 +222,7 @@ export default function SalesPage() {
           label="Top payment"
           value={
             paymentBreakdown[0]
-              ? paymentBreakdown[0][0].toUpperCase()
+              ? paymentLabel(paymentBreakdown[0][0])
               : "—"
           }
           hint={
@@ -187,6 +235,13 @@ export default function SalesPage() {
           label="Today"
           value={formatPHP(todayTotal)}
           hint="POS sales dated today (PH time)"
+        />
+        <StatCard
+          label="Utang outstanding"
+          value={formatPHP(utangOutstanding)}
+          hint={`${linkedUtang.filter((row) => row.balance > 0).length} open · ${utangOverdue} overdue`}
+          tone={utangOutstanding > 0 ? "warn" : "default"}
+          href="/utang"
         />
       </div>
 
@@ -231,6 +286,9 @@ export default function SalesPage() {
         <Link href="/pos" className="text-sm text-violet-800 hover:underline">
           Open POS
         </Link>
+        <Link href="/utang" className="text-sm text-violet-800 hover:underline">
+          Utang tracker
+        </Link>
       </div>
 
       {paymentBreakdown.length ? (
@@ -240,7 +298,7 @@ export default function SalesPage() {
               key={method}
               className="rounded-full border border-violet-900/10 bg-white px-3 py-1.5 text-xs text-violet-900"
             >
-              {method.toUpperCase()} · {formatPHP(amount)}
+              {paymentLabel(method)} · {formatPHP(amount)}
             </span>
           ))}
         </div>
@@ -262,6 +320,7 @@ export default function SalesPage() {
                 <th className="py-2 pr-3 font-medium">Category</th>
                 <th className="py-2 pr-3 font-medium">Items</th>
                 <th className="py-2 pr-3 font-medium">Payment</th>
+                <th className="py-2 pr-3 font-medium">Utang</th>
                 <th className="py-2 pr-3 font-medium">Reference</th>
                 <th className="py-2 font-medium">Amount</th>
                 {isOwner ? (
@@ -270,7 +329,9 @@ export default function SalesPage() {
               </tr>
             </thead>
             <tbody>
-              {visibleItems.map((item) => (
+              {visibleItems.map((item) => {
+                const utang = utangBySale[item._id];
+                return (
                 <tr key={item._id} className="border-b border-violet-900/5">
                   <td className="py-3 pr-3 whitespace-nowrap">
                     {formatDateTimePH(item.date)}
@@ -296,6 +357,26 @@ export default function SalesPage() {
                       <span className="capitalize">
                         {paymentLabel(item.paymentMethod)}
                       </span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-3">
+                    {utang ? (
+                      <div className="space-y-1">
+                        <Link
+                          href="/utang"
+                          className="font-medium text-violet-800 hover:underline"
+                        >
+                          {utang.loanerName}
+                        </Link>
+                        <p className="text-xs text-slate-500">
+                          Balance {formatPHP(utang.balance)}
+                          {utang.balance > 0 ? ` · ${utang.status}` : " · paid"}
+                        </p>
+                      </div>
+                    ) : item.paymentMethod === "utang" ? (
+                      <span className="text-xs text-amber-800">No utang record</span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
                     )}
                   </td>
                   <td className="py-3 pr-3 text-slate-500">
@@ -337,6 +418,16 @@ export default function SalesPage() {
                             >
                               Edit payment
                             </Button>
+                            {utang && utang.balance > 0 ? (
+                              <Link href="/utang">
+                                <Button
+                                  type="button"
+                                  className="px-3 py-1.5 text-xs"
+                                >
+                                  Track utang
+                                </Button>
+                              </Link>
+                            ) : null}
                             <Button
                               type="button"
                               variant="danger"
@@ -351,7 +442,8 @@ export default function SalesPage() {
                     </td>
                   ) : null}
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
           {!visibleItems.length ? (

@@ -15,6 +15,8 @@ export type ExpenseCategory =
 
 export type CapitalType = "initial" | "investment" | "withdrawal";
 
+export type UtangStatus = "pending" | "partial" | "paid" | "overdue";
+
 export type AlertType = "low_stock" | "negative_cash" | "kpi_threshold" | "info";
 
 export interface DashboardKpis {

@@ -12,8 +12,15 @@ import { useMountQuery } from "@/hooks/useMountQuery";
 import {
   formatPHP,
   hasSpecialPrice,
+  toInputDate,
   unitPriceForSale,
 } from "@/lib/utils";
+
+function defaultUtangDueDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 30);
+  return toInputDate(date);
+}
 
 interface CatalogItem {
   _id: string;
@@ -43,6 +50,10 @@ export default function PosPage() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [reference, setReference] = useState("");
+  const [loanerName, setLoanerName] = useState("");
+  const [loanerContact, setLoanerContact] = useState("");
+  const [dueDate, setDueDate] = useState(defaultUtangDueDate());
+  const [downPayment, setDownPayment] = useState("");
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
   const [receipt, setReceipt] = useState<{
@@ -207,6 +218,11 @@ export default function PosPage() {
 
   async function checkout() {
     if (!cart.length) return;
+    if (paymentMethod === "utang" && !loanerName.trim()) {
+      setError("Enter the loaner name for utang sales.");
+      return;
+    }
+
     setCheckingOut(true);
     setError("");
     const res = await fetch("/api/pos", {
@@ -215,6 +231,14 @@ export default function PosPage() {
       body: JSON.stringify({
         paymentMethod,
         reference: reference || undefined,
+        loanerName: paymentMethod === "utang" ? loanerName.trim() : undefined,
+        loanerContact:
+          paymentMethod === "utang" ? loanerContact.trim() || undefined : undefined,
+        dueDate: paymentMethod === "utang" ? dueDate : undefined,
+        downPayment:
+          paymentMethod === "utang" && downPayment
+            ? Number(downPayment)
+            : undefined,
         lines: cart.map((line) => ({
           itemId: line.item._id,
           quantity: line.quantity,
@@ -236,6 +260,13 @@ export default function PosPage() {
     });
     setCart([]);
     setReference("");
+    setLoanerName("");
+    setLoanerContact("");
+    setDueDate(defaultUtangDueDate());
+    setDownPayment("");
+    if (paymentMethod === "utang") {
+      setPaymentMethod("cash");
+    }
     await load();
   }
 
@@ -479,7 +510,44 @@ export default function PosPage() {
                   <option value="maya">Maya</option>
                   <option value="card">Card</option>
                   <option value="bank">Bank transfer</option>
+                  <option value="utang">Utang (credit)</option>
                 </Select>
+                {paymentMethod === "utang" ? (
+                  <div className="space-y-3 rounded-xl border border-amber-200/80 bg-amber-50/80 p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-amber-900">
+                      Utang details — tracked in Utang module
+                    </p>
+                    <Input
+                      label="Loaner name"
+                      required
+                      value={loanerName}
+                      onChange={(e) => setLoanerName(e.target.value)}
+                      placeholder="Customer name"
+                    />
+                    <Input
+                      label="Contact"
+                      value={loanerContact}
+                      onChange={(e) => setLoanerContact(e.target.value)}
+                      placeholder="Phone number"
+                    />
+                    <Input
+                      label="Due date"
+                      type="date"
+                      required
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                    />
+                    <Input
+                      label="Down payment (PHP)"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={downPayment}
+                      onChange={(e) => setDownPayment(e.target.value)}
+                      placeholder="Optional partial payment"
+                    />
+                  </div>
+                ) : null}
                 <Input
                   label="Reference (optional)"
                   value={reference}

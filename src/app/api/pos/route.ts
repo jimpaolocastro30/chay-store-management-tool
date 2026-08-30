@@ -3,22 +3,37 @@ import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { InventoryItem } from "@/models/InventoryItem";
 import { Transaction } from "@/models/Transaction";
+import { Utang, computeUtangStatus } from "@/models/Utang";
 import { requireSession } from "@/lib/api";
 import { hasSpecialPrice, unitPriceForSale } from "@/lib/utils";
 
-const schema = z.object({
-  paymentMethod: z.enum(["cash", "gcash", "maya", "card", "bank"]),
-  reference: z.string().optional(),
-  lines: z
-    .array(
-      z.object({
-        itemId: z.string().min(1),
-        quantity: z.number().int().positive(),
-        useSpecial: z.boolean().optional(),
-      })
-    )
-    .min(1),
-});
+const schema = z
+  .object({
+    paymentMethod: z.enum(["cash", "gcash", "maya", "card", "bank", "utang"]),
+    reference: z.string().optional(),
+    loanerName: z.string().optional(),
+    loanerContact: z.string().optional(),
+    dueDate: z.string().optional(),
+    downPayment: z.number().min(0).optional(),
+    lines: z
+      .array(
+        z.object({
+          itemId: z.string().min(1),
+          quantity: z.number().int().positive(),
+          useSpecial: z.boolean().optional(),
+        })
+      )
+      .min(1),
+  })
+  .superRefine((body, ctx) => {
+    if (body.paymentMethod === "utang" && !body.loanerName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Loaner name is required for utang sales.",
+        path: ["loanerName"],
+      });
+    }
+  });
 
 export async function POST(req: NextRequest) {
   const { error, session } = await requireSession("usePos");
@@ -127,6 +142,32 @@ export async function POST(req: NextRequest) {
       createdBy: session.user.id,
     });
 
+    let utangId: string | undefined;
+    if (body.paymentMethod === "utang") {
+      const amount = sale.amount;
+      const committedPayment = Math.min(
+        amount,
+        Math.max(0, body.downPayment || 0)
+      );
+      const dueDate = body.dueDate
+        ? new Date(body.dueDate)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      const utang = await Utang.create({
+        loanerName: body.loanerName!.trim(),
+        contact: body.loanerContact?.trim(),
+        direction: "receivable",
+        amount,
+        committedPayment,
+        dueDate,
+        notes: `POS sale on credit — ${summary}`,
+        status: computeUtangStatus(amount, committedPayment, dueDate),
+        saleId: sale._id,
+        createdBy: session.user.id,
+      });
+      utangId = String(utang._id);
+    }
+
     if (cogs > 0) {
       await Transaction.create({
         type: "expense",
@@ -143,6 +184,7 @@ export async function POST(req: NextRequest) {
       {
         ok: true,
         saleId: sale._id,
+        utangId,
         total: sale.amount,
         cogs: Math.round(cogs * 100) / 100,
         items: sold,

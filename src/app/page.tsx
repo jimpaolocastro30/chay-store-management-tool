@@ -7,6 +7,7 @@ import {
   Boxes,
   CircleDollarSign,
   FileSpreadsheet,
+  HandCoins,
   Landmark,
   Receipt,
   ShoppingCart,
@@ -92,6 +93,12 @@ const shortcuts = [
     hint: "Invest or withdraw",
     icon: Landmark,
     permission: "manageCapital" as const,
+  },
+  {
+    href: "/utang",
+    label: "Track utang",
+    hint: "Loans and payables",
+    icon: HandCoins,
   },
   {
     href: "/reports",
