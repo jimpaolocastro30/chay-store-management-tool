@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import {
   Boxes,
   CircleDollarSign,
+  ClipboardList,
   FileSpreadsheet,
   HandCoins,
   Landmark,
@@ -70,8 +71,14 @@ const shortcuts = [
   {
     href: "/inventory",
     label: "Update stock",
-    hint: "SKU and quantity",
+    hint: "Batches and ledger",
     icon: Boxes,
+  },
+  {
+    href: "/inventory/count",
+    label: "Stock count",
+    hint: "Physical vs system qty",
+    icon: ClipboardList,
   },
   {
     href: "/categories",

@@ -22,6 +22,7 @@ interface Item {
   sellingPrice: number;
   specialPrice?: number;
   location?: string;
+  inventoryStatus?: string;
 }
 
 const empty = {
@@ -29,13 +30,33 @@ const empty = {
   name: "",
   category: "Tea",
   quantity: "0",
-  sold: "0",
   reorderLevel: "5",
   unitCost: "",
   sellingPrice: "",
   specialPrice: "0",
   location: "Main Store",
 };
+
+function StatusBadge({ status, low }: { status?: string; low: boolean }) {
+  const value = status || (low ? "LOW_STOCK" : "AVAILABLE");
+  const styles: Record<string, string> = {
+    AVAILABLE: "bg-emerald-100 text-emerald-900",
+    LOW_STOCK: "bg-amber-100 text-amber-900",
+    OUT_OF_STOCK: "bg-slate-200 text-slate-700",
+    DEPLETED: "bg-slate-200 text-slate-700",
+    EXPIRED: "bg-rose-100 text-rose-900",
+    BLOCKED: "bg-violet-100 text-violet-900",
+  };
+  return (
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+        styles[value] || "bg-slate-100 text-slate-700"
+      }`}
+    >
+      {value.replaceAll("_", " ")}
+    </span>
+  );
+}
 
 export default function InventoryPage() {
   const { data: session } = useSession();
@@ -72,7 +93,6 @@ export default function InventoryPage() {
       name: item.name,
       category: item.category,
       quantity: String(item.quantity),
-      sold: String(item.sold || 0),
       reorderLevel: String(item.reorderLevel),
       unitCost: String(item.unitCost),
       sellingPrice: String(item.sellingPrice),
@@ -90,18 +110,24 @@ export default function InventoryPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const payload = {
+    const payload: Record<string, unknown> = {
       sku: form.sku,
       name: form.name,
-      category: resolveCategory(form.category, managedCategories, Boolean(editingId)),
-      quantity: Number(form.quantity),
-      sold: Number(form.sold || 0),
+      category: resolveCategory(
+        form.category,
+        managedCategories,
+        Boolean(editingId)
+      ),
       reorderLevel: Number(form.reorderLevel),
       unitCost: Number(form.unitCost),
       sellingPrice: Number(form.sellingPrice),
       specialPrice: Number(form.specialPrice || 0),
       location: form.location,
     };
+    if (!editingId) {
+      payload.quantity = Number(form.quantity);
+      payload.sold = 0;
+    }
 
     const res = editingId
       ? await fetch(`/api/inventory/${editingId}`, {
@@ -121,23 +147,6 @@ export default function InventoryPage() {
     await load();
   }
 
-  async function patchItem(id: string, body: Partial<Item>) {
-    await fetch(`/api/inventory/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    await load();
-  }
-
-  async function recordSold(item: Item) {
-    if (item.quantity <= 0) return;
-    await patchItem(item._id, {
-      quantity: item.quantity - 1,
-      sold: (item.sold || 0) + 1,
-    });
-  }
-
   async function remove(id: string) {
     if (!confirm("Remove this inventory item?")) return;
     await fetch(`/api/inventory/${id}`, { method: "DELETE" });
@@ -153,7 +162,8 @@ export default function InventoryPage() {
   }, [items, managedCategories]);
 
   const visibleItems = useMemo(
-    () => (category ? items.filter((item) => item.category === category) : items),
+    () =>
+      category ? items.filter((item) => item.category === category) : items,
     [items, category]
   );
 
@@ -184,7 +194,7 @@ export default function InventoryPage() {
   }
 
   const formPanel = (
-    <Panel title={editingId ? "Edit item" : "Add item"}>
+    <Panel title={editingId ? "Edit product" : "Add product"}>
       <form onSubmit={onSubmit} className="space-y-3">
         <Input
           label="SKU"
@@ -210,33 +220,30 @@ export default function InventoryPage() {
             </option>
           ))}
         </Select>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Input
-            label="On hand"
-            type="number"
-            min="0"
-            required
-            value={form.quantity}
-            onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-          />
-          <Input
-            label="Sold"
-            type="number"
-            min="0"
-            required
-            value={form.sold}
-            onChange={(e) => setForm({ ...form, sold: e.target.value })}
-          />
+        <div className="grid grid-cols-2 gap-3">
+          {!editingId ? (
+            <Input
+              label="Opening qty"
+              type="number"
+              min="0"
+              required
+              value={form.quantity}
+              onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+            />
+          ) : null}
           <Input
             label="Reorder at"
             type="number"
             min="0"
             required
-            className="col-span-2 sm:col-span-1"
             value={form.reorderLevel}
             onChange={(e) => setForm({ ...form, reorderLevel: e.target.value })}
           />
         </div>
+        <p className="text-xs text-slate-500">
+          Stock on hand is updated by receiving, POS sales, and stock counts —
+          not by overwriting quantity.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="Unit cost"
@@ -274,27 +281,17 @@ export default function InventoryPage() {
           {loading
             ? "Saving…"
             : editingId
-              ? "Update item"
-              : "Add inventory item"}
+              ? "Update product"
+              : "Add product"}
         </Button>
         {editingId || formOpen ? (
           <Button
             type="button"
             variant="secondary"
-            className="w-full lg:hidden"
+            className="w-full"
             onClick={cancelEdit}
           >
-            Close form
-          </Button>
-        ) : null}
-        {editingId ? (
-          <Button
-            type="button"
-            variant="secondary"
-            className="hidden w-full lg:inline-flex"
-            onClick={cancelEdit}
-          >
-            Cancel edit
+            Cancel
           </Button>
         ) : null}
       </form>
@@ -304,21 +301,36 @@ export default function InventoryPage() {
   return (
     <AppShell
       title="Inventory"
-      subtitle="SKU management, stock on hand, units sold, and reorder alerts"
+      subtitle="Batches, stock counts, and an auditable movement ledger"
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-violet-900/10 bg-white px-4 py-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">On hand</p>
+          <p className="text-xs uppercase tracking-wide text-slate-500">
+            On hand
+          </p>
           <p className="font-[family-name:var(--font-display)] text-2xl text-violet-950">
             {totalOnHand}
           </p>
         </div>
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <p className="text-xs uppercase tracking-wide text-emerald-800">Sold</p>
+          <p className="text-xs uppercase tracking-wide text-emerald-800">
+            Sold
+          </p>
           <p className="font-[family-name:var(--font-display)] text-2xl text-emerald-900">
             {totalSold}
           </p>
         </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Link href="/inventory/receive">
+          <Button type="button">Receive stock</Button>
+        </Link>
+        <Link href="/inventory/count">
+          <Button type="button" variant="secondary">
+            Stock count
+          </Button>
+        </Link>
       </div>
 
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end">
@@ -367,7 +379,7 @@ export default function InventoryPage() {
         {isOwner ? (
           <Link
             href="/categories"
-            className="min-h-11 inline-flex items-center text-sm text-violet-800 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm text-violet-800 hover:underline"
           >
             Manage categories
           </Link>
@@ -388,7 +400,6 @@ export default function InventoryPage() {
             <div className="space-y-3 lg:hidden">
               {visibleItems.map((item) => {
                 const low = item.quantity <= item.reorderLevel;
-                const sold = item.sold || 0;
                 return (
                   <article
                     key={item._id}
@@ -401,62 +412,28 @@ export default function InventoryPage() {
                           {item.sku} · {item.category}
                         </p>
                       </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          sold > 0
-                            ? "bg-emerald-100 text-emerald-900"
-                            : "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        Sold {sold}
-                      </span>
+                      <StatusBadge status={item.inventoryStatus} low={low} />
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                       <p className={low ? "font-semibold text-amber-800" : ""}>
                         On hand {item.quantity}
                         <span className="block text-[11px] font-normal text-slate-500">
-                          reorder {item.reorderLevel}
+                          sold {item.sold || 0} · reorder {item.reorderLevel}
                         </span>
                       </p>
                       <p>
                         {formatPHP(item.quantity * item.unitCost)}
                         <span className="block text-[11px] text-slate-500">
                           sell {formatPHP(item.sellingPrice)}
-                          {(item.specialPrice || 0) > 0
-                            ? ` · special ${formatPHP(item.specialPrice || 0)}`
-                            : ""}
                         </span>
                       </p>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="min-h-11 min-w-11 rounded-xl border border-violet-900/15 px-3"
-                        onClick={() =>
-                          patchItem(item._id, {
-                            quantity: Math.max(0, item.quantity - 1),
-                          })
-                        }
-                      >
-                        −
-                      </button>
-                      <button
-                        type="button"
-                        className="min-h-11 min-w-11 rounded-xl border border-violet-900/15 px-3"
-                        onClick={() =>
-                          patchItem(item._id, { quantity: item.quantity + 1 })
-                        }
-                      >
-                        +
-                      </button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        disabled={item.quantity <= 0}
-                        onClick={() => recordSold(item)}
-                      >
-                        Mark sold
-                      </Button>
+                      <Link href={`/inventory/${item._id}`}>
+                        <Button type="button" variant="secondary">
+                          View / history
+                        </Button>
+                      </Link>
                       {isOwner ? (
                         <>
                           <Button
@@ -485,24 +462,25 @@ export default function InventoryPage() {
               <table className="min-w-full text-left text-sm">
                 <thead className="border-b border-violet-900/10 text-slate-500">
                   <tr>
-                    <th className="py-2 pr-3 font-medium">Item</th>
+                    <th className="py-2 pr-3 font-medium">Product</th>
                     <th className="py-2 pr-3 font-medium">On hand</th>
                     <th className="py-2 pr-3 font-medium">Sold</th>
-                    <th className="py-2 pr-3 font-medium">Value</th>
-                    <th className="py-2 font-medium">Adjust</th>
-                    {isOwner ? (
-                      <th className="py-2 pl-3 font-medium">Actions</th>
-                    ) : null}
+                    <th className="py-2 pr-3 font-medium">Status</th>
+                    <th className="py-2 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visibleItems.map((item) => {
                     const low = item.quantity <= item.reorderLevel;
-                    const sold = item.sold || 0;
                     return (
-                      <tr key={item._id} className="border-b border-violet-900/5">
+                      <tr
+                        key={item._id}
+                        className="border-b border-violet-900/5"
+                      >
                         <td className="py-3 pr-3">
-                          <p className="font-medium text-violet-950">{item.name}</p>
+                          <p className="font-medium text-violet-950">
+                            {item.name}
+                          </p>
                           <p className="text-xs text-slate-500">
                             {item.sku} · {item.category}
                           </p>
@@ -517,79 +495,51 @@ export default function InventoryPage() {
                           >
                             {item.quantity}
                           </span>
-                          <p className="text-[11px] text-slate-500">
-                            reorder {item.reorderLevel}
-                          </p>
                         </td>
                         <td className="py-3 pr-3">
                           <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-900">
-                            {sold}
+                            {item.sold || 0}
                           </span>
                         </td>
                         <td className="py-3 pr-3">
-                          {formatPHP(item.quantity * item.unitCost)}
-                          <p className="text-[11px] text-slate-500">
-                            sell {formatPHP(item.sellingPrice)}
-                          {(item.specialPrice || 0) > 0
-                            ? ` · special ${formatPHP(item.specialPrice || 0)}`
-                            : ""}
-                          </p>
+                          <StatusBadge
+                            status={item.inventoryStatus}
+                            low={low}
+                          />
                         </td>
                         <td className="py-3">
                           <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              className="min-h-11 min-w-11 rounded-xl border border-violet-900/15"
-                              onClick={() =>
-                                patchItem(item._id, {
-                                  quantity: Math.max(0, item.quantity - 1),
-                                })
-                              }
-                            >
-                              −
-                            </button>
-                            <button
-                              type="button"
-                              className="min-h-11 min-w-11 rounded-xl border border-violet-900/15"
-                              onClick={() =>
-                                patchItem(item._id, {
-                                  quantity: item.quantity + 1,
-                                })
-                              }
-                            >
-                              +
-                            </button>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              className="px-3"
-                              disabled={item.quantity <= 0}
-                              onClick={() => recordSold(item)}
-                            >
-                              Sold +1
-                            </Button>
-                          </div>
-                        </td>
-                        {isOwner ? (
-                          <td className="py-3 pl-3">
-                            <div className="flex gap-2">
+                            <Link href={`/inventory/${item._id}`}>
                               <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={() => startEdit(item)}
+                                className="px-3 py-1.5 text-xs"
                               >
-                                Edit
+                                View
                               </Button>
-                              <Button
-                                type="button"
-                                variant="danger"
-                                onClick={() => remove(item._id)}
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </td>
-                        ) : null}
+                            </Link>
+                            {isOwner ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className="px-3 py-1.5 text-xs"
+                                  onClick={() => startEdit(item)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="danger"
+                                  className="px-3 py-1.5 text-xs"
+                                  onClick={() => remove(item._id)}
+                                >
+                                  Delete
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}

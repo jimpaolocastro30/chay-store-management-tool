@@ -4,10 +4,15 @@ import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { Transaction } from "@/models/Transaction";
 import { InventoryItem } from "@/models/InventoryItem";
+import { InventoryBatch } from "@/models/InventoryBatch";
+import { InventoryTxn } from "@/models/InventoryTxn";
+import { InventoryCount } from "@/models/InventoryCount";
+import { Counter } from "@/models/Counter";
 import { CapitalEntry } from "@/models/CapitalEntry";
 import { Alert } from "@/models/Alert";
 import { Category } from "@/models/Category";
 import { PRODUCT_CATEGORIES } from "@/lib/categories";
+import { ensureOpeningBatch } from "@/lib/inventoryStock";
 
 export async function POST() {
   const allowed =
@@ -28,6 +33,10 @@ export async function POST() {
       User.deleteMany({}),
       Transaction.deleteMany({}),
       InventoryItem.deleteMany({}),
+      InventoryBatch.deleteMany({}),
+      InventoryTxn.deleteMany({}),
+      InventoryCount.deleteMany({}),
+      Counter.deleteMany({}),
       CapitalEntry.deleteMany({}),
       Alert.deleteMany({}),
       Category.deleteMany({}),
@@ -91,7 +100,7 @@ export async function POST() {
       }))
     );
 
-    await InventoryItem.create([
+    const products = await InventoryItem.create([
       {
         sku: "TEA-001",
         name: "Jasmine Green Tea 250g",
@@ -159,6 +168,10 @@ export async function POST() {
         specialPrice: 0,
       },
     ]);
+
+    for (const product of products) {
+      await ensureOpeningBatch(product, String(owner._id));
+    }
 
     const revenueDescriptions = [
       "Walk-in tea sales",

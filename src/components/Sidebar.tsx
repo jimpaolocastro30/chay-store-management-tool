@@ -8,6 +8,7 @@ import {
   BarChart3,
   Boxes,
   CircleDollarSign,
+  ClipboardList,
   FileSpreadsheet,
   HandCoins,
   Landmark,
@@ -30,6 +31,8 @@ const links = [
   { href: "/sales", label: "Sales", icon: TrendingUp },
   { href: "/expenses", label: "Expenses", icon: Receipt },
   { href: "/inventory", label: "Inventory", icon: Boxes },
+  { href: "/inventory/receive", label: "Receive", icon: Boxes },
+  { href: "/inventory/count", label: "Stock count", icon: ClipboardList },
   { href: "/categories", label: "Categories", icon: Tags, permission: "editInventory" as const },
   { href: "/prices", label: "Prices", icon: CircleDollarSign, permission: "editInventory" as const },
   { href: "/capital", label: "Capital", icon: Landmark, permission: "manageCapital" as const },
@@ -89,7 +92,10 @@ export function Sidebar({
               const active =
                 link.href === "/"
                   ? pathname === "/"
-                  : pathname.startsWith(link.href);
+                  : link.href === "/inventory"
+                    ? pathname === "/inventory" ||
+                      /^\/inventory\/[a-f0-9]{24}/i.test(pathname)
+                    : pathname.startsWith(link.href);
               const Icon = link.icon;
               return (
                 <Link

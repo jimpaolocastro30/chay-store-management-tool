@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { InventoryItem } from "@/models/InventoryItem";
 import { Transaction } from "@/models/Transaction";
 import { Utang, computeUtangStatus } from "@/models/Utang";
 import { requireSession } from "@/lib/api";
 import { hasSpecialPrice, unitPriceForSale } from "@/lib/utils";
+import {
+  availableQuantity,
+  consumeForSale,
+  ensureOpeningBatch,
+} from "@/lib/inventoryStock";
 
 const schema = z
   .object({
@@ -57,6 +63,7 @@ export async function POST(req: NextRequest) {
     }> = [];
     let revenue = 0;
     let cogs = 0;
+    const reserved = new Map<string, number>();
 
     for (const line of body.lines) {
       const item = await InventoryItem.findOne({
@@ -81,14 +88,19 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      if (item.quantity < line.quantity) {
+
+      await ensureOpeningBatch(item, session.user.id);
+      const available = await availableQuantity(String(item._id));
+      const alreadyReserved = reserved.get(String(item._id)) || 0;
+      if (available < alreadyReserved + line.quantity) {
         return NextResponse.json(
           {
-            error: `Not enough stock for ${item.sku}. Available: ${item.quantity}.`,
+            error: `Not enough sellable stock for ${item.sku}. Available: ${available}.`,
           },
           { status: 400 }
         );
       }
+      reserved.set(String(item._id), alreadyReserved + line.quantity);
 
       const useSpecial = Boolean(line.useSpecial);
       const unitPrice = unitPriceForSale(
@@ -100,7 +112,6 @@ export async function POST(req: NextRequest) {
       pending.push({ item, quantity: line.quantity });
       const lineTotal = unitPrice * line.quantity;
       revenue += lineTotal;
-      cogs += item.unitCost * line.quantity;
       sold.push({
         sku: item.sku,
         name: item.name,
@@ -111,10 +122,28 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const saleId = new mongoose.Types.ObjectId();
+    const allocations: Array<{
+      sku: string;
+      batchNumber: string;
+      quantity: number;
+    }> = [];
+
     for (const row of pending) {
-      row.item.quantity -= row.quantity;
-      row.item.sold = (row.item.sold || 0) + row.quantity;
-      await row.item.save();
+      const result = await consumeForSale({
+        product: row.item,
+        quantity: row.quantity,
+        userId: session.user.id,
+        saleId: String(saleId),
+      });
+      cogs += result.cogs;
+      for (const alloc of result.allocations) {
+        allocations.push({
+          sku: row.item.sku,
+          batchNumber: alloc.batchNumber,
+          quantity: alloc.quantity,
+        });
+      }
     }
 
     const summary = sold
@@ -131,6 +160,7 @@ export async function POST(req: NextRequest) {
       categories.length === 1 ? String(categories[0]) : "Mixed";
 
     const sale = await Transaction.create({
+      _id: saleId,
       type: "revenue",
       amount: Math.round(revenue * 100) / 100,
       category: saleCategory,
@@ -188,6 +218,7 @@ export async function POST(req: NextRequest) {
         total: sale.amount,
         cogs: Math.round(cogs * 100) / 100,
         items: sold,
+        batches: allocations,
         paymentMethod: body.paymentMethod,
       },
       { status: 201 }

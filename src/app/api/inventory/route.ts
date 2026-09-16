@@ -3,6 +3,10 @@ import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { InventoryItem } from "@/models/InventoryItem";
 import { requireSession } from "@/lib/api";
+import {
+  ensureOpeningBatch,
+  productStatus,
+} from "@/lib/inventoryStock";
 
 const schema = z.object({
   sku: z.string().min(2),
@@ -43,12 +47,17 @@ export async function GET(req: NextRequest) {
     items = items.filter((i) => i.quantity <= i.reorderLevel);
   }
 
-  return NextResponse.json(items);
+  return NextResponse.json(
+    items.map((item) => ({
+      ...item.toJSON(),
+      inventoryStatus: productStatus(item.quantity, item.reorderLevel),
+    }))
+  );
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireSession("manageInventory");
-  if (error) return error;
+  const { error, session } = await requireSession("manageInventory");
+  if (error || !session) return error;
 
   try {
     const body = schema.parse(await req.json());
@@ -59,6 +68,7 @@ export async function POST(req: NextRequest) {
       sold: body.sold ?? 0,
       specialPrice: body.specialPrice ?? 0,
     });
+    await ensureOpeningBatch(item, session.user.id);
     return NextResponse.json(item, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid payload";

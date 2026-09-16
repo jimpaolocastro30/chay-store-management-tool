@@ -2,16 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { InventoryItem } from "@/models/InventoryItem";
+import { InventoryBatch } from "@/models/InventoryBatch";
+import { InventoryTxn } from "@/models/InventoryTxn";
 import { requireSession } from "@/lib/api";
 import { can } from "@/lib/utils";
 import { UserRole } from "@/types";
+import {
+  computeBatchStatus,
+  ensureOpeningBatch,
+  productStatus,
+} from "@/lib/inventoryStock";
 
 const ownerSchema = z.object({
   sku: z.string().min(2).optional(),
   name: z.string().min(2).optional(),
   category: z.string().min(2).optional(),
-  quantity: z.number().min(0).optional(),
-  sold: z.number().min(0).optional(),
   reorderLevel: z.number().min(0).optional(),
   unitCost: z.number().min(0).optional(),
   sellingPrice: z.number().min(0).optional(),
@@ -22,9 +27,46 @@ const ownerSchema = z.object({
 });
 
 const qtySchema = z.object({
-  quantity: z.number().min(0).optional(),
-  sold: z.number().min(0).optional(),
+  location: z.string().optional(),
+  notes: z.string().optional(),
 });
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { error } = await requireSession("viewDashboard");
+  if (error) return error;
+
+  const { id } = await params;
+  await connectDB();
+  const item = await InventoryItem.findById(id);
+  if (!item) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  await ensureOpeningBatch(item);
+  const fresh = (await InventoryItem.findById(id)) || item;
+
+  const batches = await InventoryBatch.find({ productId: fresh._id }).sort({
+    expiryDate: 1,
+    receivedAt: 1,
+  });
+  const ledger = await InventoryTxn.find({ productId: fresh._id }).sort({
+    createdAt: -1,
+  });
+
+  return NextResponse.json({
+    item: {
+      ...fresh.toJSON(),
+      inventoryStatus: productStatus(fresh.quantity, fresh.reorderLevel),
+    },
+    batches: batches.map((batch) => ({
+      ...batch.toObject(),
+      status: computeBatchStatus(batch, fresh.reorderLevel),
+    })),
+    ledger,
+  });
+}
 
 export async function PATCH(
   req: NextRequest,

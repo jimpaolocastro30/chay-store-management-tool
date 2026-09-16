@@ -3,11 +3,13 @@ import * as XLSX from "xlsx";
 import { connectDB } from "@/lib/db";
 import { Transaction } from "@/models/Transaction";
 import { InventoryItem } from "@/models/InventoryItem";
+import { InventoryBatch } from "@/models/InventoryBatch";
 import { CapitalEntry } from "@/models/CapitalEntry";
 import { Category } from "@/models/Category";
 import { requireSession } from "@/lib/api";
 import { can, Permission } from "@/lib/utils";
 import { UserRole } from "@/types";
+import { ensureOpeningBatch } from "@/lib/inventoryStock";
 
 type ImportKind =
   | "auto"
@@ -76,6 +78,11 @@ async function importInventory(rows: Record<string, unknown>[]) {
     const name = asString(cell(row, "name", "Name"));
     if (!sku) continue;
 
+    const existing = await InventoryItem.findOne({ sku });
+    const hasBatches = existing
+      ? (await InventoryBatch.countDocuments({ productId: existing._id })) > 0
+      : false;
+
     const update: Record<string, unknown> = {
       sku,
       unitCost: asNumber(cell(row, "unitCost", "UnitCost", "unit_cost")),
@@ -89,10 +96,10 @@ async function importInventory(rows: Record<string, unknown>[]) {
 
     const category = asString(cell(row, "category", "Category"));
     if (category) update.category = category;
-    if (cell(row, "quantity", "Quantity") !== undefined) {
+    if (!hasBatches && cell(row, "quantity", "Quantity") !== undefined) {
       update.quantity = asNumber(cell(row, "quantity", "Quantity"));
     }
-    if (cell(row, "sold", "Sold") !== undefined) {
+    if (!hasBatches && cell(row, "sold", "Sold") !== undefined) {
       update.sold = asNumber(cell(row, "sold", "Sold"));
     }
     if (cell(row, "reorderLevel", "ReorderLevel") !== undefined) {
@@ -114,19 +121,21 @@ async function importInventory(rows: Record<string, unknown>[]) {
       update.active = true;
     }
 
+    let item = existing;
     if (!name) {
-      const existing = await InventoryItem.findOne({ sku });
       if (!existing) continue;
       await InventoryItem.updateOne({ sku }, { $set: update });
+      item = await InventoryItem.findOne({ sku });
     } else {
       update.name = name;
       if (!update.category) update.category = "General";
-      await InventoryItem.findOneAndUpdate(
+      item = await InventoryItem.findOneAndUpdate(
         { sku },
         { $set: update },
         { upsert: true, new: true }
       );
     }
+    if (item) await ensureOpeningBatch(item);
     upserted += 1;
   }
   return upserted;
